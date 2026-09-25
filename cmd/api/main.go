@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	"api/internal/auth"
 	"api/internal/server"
 )
 
@@ -38,6 +39,11 @@ func gracefulShutdown(apiServer *http.Server, done chan bool) {
 }
 
 func main() {
+
+
+	if err := auth.NewAuth(); err != nil {
+		log.Fatalf("authentication configuration error: %v", err)
+	}
 
 	server := server.NewServer()
 
