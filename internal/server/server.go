@@ -7,9 +7,9 @@ import (
 	"strconv"
 	"time"
 
-	_ "github.com/joho/godotenv/autoload"
-
 	"api/internal/database"
+	"api/internal/domain/user"
+	_ "github.com/joho/godotenv/autoload"
 )
 
 type Server struct {
@@ -25,6 +25,9 @@ func NewServer() *http.Server {
 
 		db: database.New(),
 	}
+	
+	NewServer.db.DB().AutoMigrate(&user.User{})
+	NewServer.db.DB().AutoMigrate(&user.UserAuth{})
 
 	// Declare Server config
 	server := &http.Server{
