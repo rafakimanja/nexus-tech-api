@@ -16,7 +16,6 @@ type User struct {
 }
 
 func (u *User) BeforeCreate(tx *gorm.DB) error {
-	fmt.Println("EMAIL:", u.Email)
 	partes := strings.Split(u.Email, "@")
 	if len(partes) != 2 {
 		return fmt.Errorf("e-mail malformado")

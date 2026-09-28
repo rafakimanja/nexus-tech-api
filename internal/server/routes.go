@@ -3,11 +3,18 @@ package server
 import (
 	"api/internal/domain/uauth"
 	"api/internal/domain/user"
+	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/markbates/goth/gothic"
+	"google.golang.org/api/idtoken"
+)
+
+var (
+	GOOGLE_CLIENT_ID = "GOOGLE_CLIENT_ID"
 )
 
 func (s *Server) RegisterRoutes() http.Handler {
@@ -25,6 +32,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 	r.GET("/", s.HelloWorldHandler)
 	r.GET("/health", s.healthHandler)
 	r.GET("/login", s.loginHandler)
+	r.POST("/login/v2", s.Login)
 	r.GET("/auth/google", s.GetAuthGoogle)
 	r.GET("/auth/google/callback", s.GetAuthGoogleCallback)
 
@@ -84,6 +92,8 @@ func (s *Server) GetAuthGoogleCallback(c *gin.Context) {
 		return
 	}
 
+	fmt.Println("ID TOKEN:", user.IDToken)
+
 	newUser.Name = user.Name
 	newUser.Email = user.Email
 	newUser.Foto_url = &user.AvatarURL
@@ -105,9 +115,9 @@ func (s *Server) GetAuthGoogleCallback(c *gin.Context) {
 	newUserAuth.ProviderUserID = user.UserID
 	newUserAuth.Provider = user.Provider
 
-	idAuth, err := s.userAuthService.Create(newUserAuth)
+	_, err = s.userAuthService.Create(newUserAuth)
 
-	if err != nil || id == 0 {
+	if err != nil {
 		s.logger.Println(err.Error())
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{
@@ -118,8 +128,60 @@ func (s *Server) GetAuthGoogleCallback(c *gin.Context) {
 		return
 	}
 
+	token, err := newUser.GenerateToken()
+	if err != nil {
+		s.logger.Println(err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{
+				"code":    http.StatusInternalServerError,
+				"message": err.Error(),
+			},
+		})
+		return
+	}
+
+	c.Header("Authorization", token)
+	c.JSON(http.StatusOK, newUser)
+}
+
+func (s *Server) Login(c *gin.Context){
+	googleClientID := os.Getenv(GOOGLE_CLIENT_ID)
+
+	var req struct {
+		IDToken string `json:"idToken"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		s.logger.Println(err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": gin.H{
+				"code": http.StatusBadRequest,
+				"message": err.Error(),
+			},
+		})
+		return
+	}
+
+	payload, err := idtoken.Validate(
+		c.Request.Context(),
+		req.IDToken,
+		googleClientID,
+	)
+
+	if err != nil {
+		s.logger.Println(err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{
+				"code":    http.StatusUnauthorized,
+				"message": err.Error(),
+			},
+		})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"userID":     id,
-		"userAuthID": idAuth,
+		"email": payload.Claims["email"],
+		"name": payload.Claims["name"],
+		"foto_url": payload.Claims["picture"],
 	})
 }
