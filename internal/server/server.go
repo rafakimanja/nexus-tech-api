@@ -9,6 +9,8 @@ import (
 
 	"api/internal/database"
 	"api/internal/domain/user"
+	"api/internal/domain/uauth"
+
 	_ "github.com/joho/godotenv/autoload"
 )
 
@@ -27,7 +29,7 @@ func NewServer() *http.Server {
 	}
 	
 	NewServer.db.DB().AutoMigrate(&user.User{})
-	NewServer.db.DB().AutoMigrate(&user.UserAuth{})
+	NewServer.db.DB().AutoMigrate(&uauth.UserAuth{})
 
 	// Declare Server config
 	server := &http.Server{
