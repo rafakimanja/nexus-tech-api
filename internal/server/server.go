@@ -2,32 +2,45 @@ package server
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
 	"time"
 
 	"api/internal/database"
-	"api/internal/domain/user"
 	"api/internal/domain/uauth"
+	"api/internal/domain/user"
 
 	_ "github.com/joho/godotenv/autoload"
 )
 
 type Server struct {
-	port int
-
-	db database.Service
+	port            int
+	userService     user.UserService
+	userHandler     *user.UserHandler
+	userAuthService uauth.UAuthService
+	db              database.Service
+	logger          *log.Logger
 }
 
-func NewServer() *http.Server {
+func NewServer(
+	db database.Service,
+	logger *log.Logger,
+	userService user.UserService,
+	userHandler *user.UserHandler,
+	userAuthService uauth.UAuthService,
+) *http.Server {
 	port, _ := strconv.Atoi(os.Getenv("PORT"))
 	NewServer := &Server{
-		port: port,
-
-		db: database.New(),
+		port:            port,
+		db:              db,
+		logger:          logger,
+		userService:     userService,
+		userHandler:     userHandler,
+		userAuthService: userAuthService,
 	}
-	
+
 	NewServer.db.DB().AutoMigrate(&user.User{})
 	NewServer.db.DB().AutoMigrate(&uauth.UserAuth{})
 

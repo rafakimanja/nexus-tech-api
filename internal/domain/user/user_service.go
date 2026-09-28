@@ -31,6 +31,6 @@ func (s *service) GetByID(id int) (User, error) {
 	return s.repo.FindByID(id)
 }
 
-func NewUserService(repo UserRepository) UserService {
+func NewService(repo UserRepository) UserService {
 	return &service{repo: repo}
 }

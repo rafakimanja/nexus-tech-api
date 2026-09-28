@@ -16,3 +16,7 @@ func (s *service) Create(newAuth UserAuth) (uint, error) {
 func (s *service) GetByID(id int) (UserAuth, error){
 	return s.repo.FindByID(id)
 }
+
+func NewService(repo UAuthRepository) UAuthService {
+	return &service{repo: repo}
+}

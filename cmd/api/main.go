@@ -10,6 +10,9 @@ import (
 	"time"
 
 	"api/internal/auth"
+	"api/internal/database"
+	"api/internal/domain/uauth"
+	"api/internal/domain/user"
 	"api/internal/server"
 )
 
@@ -39,13 +42,21 @@ func gracefulShutdown(apiServer *http.Server, done chan bool) {
 }
 
 func main() {
+	db := database.New()
+	logger := log.Default()
 
+	userRepository := user.NewRepository(db.DB())
+	userService := user.NewService(userRepository)
+	userHandler := user.NewHandler(userService, logger)
+
+	userAuthRepository := uauth.NewRepository(db.DB())
+	userAuthService := uauth.NewService(userAuthRepository)
 
 	if err := auth.NewAuth(); err != nil {
 		log.Fatalf("authentication configuration error: %v", err)
 	}
 
-	server := server.NewServer()
+	server := server.NewServer(db, logger, userService, userHandler,userAuthService)
 
 	// Create a done channel to signal when the shutdown is complete
 	done := make(chan bool, 1)

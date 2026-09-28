@@ -93,7 +93,7 @@ func (h *UserHandler) CreateUser(c *gin.Context){
 		return 
 	}
 
-	c.JSON(http.StatusOK, gin.H{"userID": id})
+	c.JSON(http.StatusCreated, gin.H{"userID": id})
 }
 
 func (h *UserHandler) DeleteUser(c *gin.Context){

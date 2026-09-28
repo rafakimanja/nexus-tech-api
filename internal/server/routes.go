@@ -1,6 +1,8 @@
 package server
 
 import (
+	"api/internal/domain/uauth"
+	"api/internal/domain/user"
 	"net/http"
 
 	"github.com/gin-contrib/cors"
@@ -18,11 +20,15 @@ func (s *Server) RegisterRoutes() http.Handler {
 		AllowCredentials: true, // Enable cookies/auth
 	}))
 
+	userRoutes := user.NewRouter(s.userHandler)
+
 	r.GET("/", s.HelloWorldHandler)
 	r.GET("/health", s.healthHandler)
 	r.GET("/login", s.loginHandler)
 	r.GET("/auth/google", s.GetAuthGoogle)
 	r.GET("/auth/google/callback", s.GetAuthGoogleCallback)
+
+	userRoutes.RegisterRoutes(r.Group("/users"))
 
 	return r
 }
@@ -64,6 +70,9 @@ func (s *Server) GetAuthGoogle(c *gin.Context) {
 }
 
 func (s *Server) GetAuthGoogleCallback(c *gin.Context) {
+	var newUser user.User
+	var newUserAuth uauth.UserAuth
+
 	request := c.Request.Clone(c.Request.Context())
 	query := request.URL.Query()
 	query.Set("provider", "google")
@@ -75,11 +84,42 @@ func (s *Server) GetAuthGoogleCallback(c *gin.Context) {
 		return
 	}
 
+	newUser.Name = user.Name
+	newUser.Email = user.Email
+	newUser.Foto_url = &user.AvatarURL
+
+	id, err := s.userService.Create(newUser)
+
+	if err != nil || id == 0 {
+		s.logger.Println(err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{
+				"code":    http.StatusInternalServerError,
+				"message": err.Error(),
+			},
+		})
+		return
+	}
+
+	newUserAuth.UserID = id
+	newUserAuth.ProviderUserID = user.UserID
+	newUserAuth.Provider = user.Provider
+
+	idAuth, err := s.userAuthService.Create(newUserAuth)
+
+	if err != nil || id == 0 {
+		s.logger.Println(err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{
+				"code":    http.StatusInternalServerError,
+				"message": err.Error(),
+			},
+		})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"id":         user.UserID,
-		"name":       user.Name,
-		"email":      user.Email,
-		"avatar_url": user.AvatarURL,
-		"provider":   user.Provider,
+		"userID":     id,
+		"userAuthID": idAuth,
 	})
 }
