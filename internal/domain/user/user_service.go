@@ -3,6 +3,7 @@ package user
 type UserService interface {
 	GetAll() ([]User, error)
 	GetByID(id int) (User, error)
+	GetByEmail(email string) (User, error)
 	Create(newUser User) (uint, error)
 	DeleteByID(id int) error
 }
@@ -29,6 +30,10 @@ func (s *service) GetAll() ([]User, error) {
 // GetByID implements [UserService].
 func (s *service) GetByID(id int) (User, error) {
 	return s.repo.FindByID(id)
+}
+
+func (s *service) GetByEmail(email string) (User, error){
+	return s.repo.FindByEmail(email)
 }
 
 func NewService(repo UserRepository) UserService {
