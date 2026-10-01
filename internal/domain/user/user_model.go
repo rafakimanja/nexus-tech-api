@@ -20,16 +20,19 @@ func (u *User) BeforeCreate(tx *gorm.DB) error {
 	if len(partes) != 2 {
 		return fmt.Errorf("e-mail malformado")
 	}
-	dominio := strings.ToLower(partes[1])
 
-	if u.Email == "rafaens.dev@gmail.com" {
-		u.Role = "admin"
-	}
+	dominio := strings.ToLower(partes[1])
+	email := strings.ToLower(u.Email)
 
 	switch {
+	case email == "rafaens.dev@gmail.com":
+		u.Role = "admin"
+
 	case dominio == "gmail.com" || dominio == "googlemail.com":
 		u.Role = "demandante"
-	case dominio == "osorio.ifrs.edu.br" || dominio == "aluno.osorio.ifrs.edu.br":
+
+	case dominio == "osorio.ifrs.edu.br" ||
+		dominio == "aluno.osorio.ifrs.edu.br":
 		u.Role = "professor"
 	}
 
