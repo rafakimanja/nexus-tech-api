@@ -8,8 +8,8 @@ import (
 
 type UserAuth struct {
 	gorm.Model
-	UserID         uint
-	Provider       string
-	ProviderUserID string
-	User           user.User `gorm:"foreignKey:UserID"`
+	UserID         uint      `json:"user_id" gorm:"not null"`
+	Provider       string    `json:"provider" gorm:"not null"`
+	ProviderUserID string    `json:"provider_user_id" gorm:"not null"`
+	User           user.User `gorm:"foreignKey:UserID;references:ID"`
 }

@@ -1,9 +1,6 @@
 package server
 
 import (
-	"api/internal/domain/uauth"
-	"api/internal/domain/user"
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -36,8 +33,6 @@ func (s *Server) GetAuthGoogle(c *gin.Context) {
 }
 
 func (s *Server) GetAuthGoogleCallback(c *gin.Context) {
-	var newUser user.User
-	var newUserAuth uauth.UserAuth
 
 	request := c.Request.Clone(c.Request.Context())
 	query := request.URL.Query()
@@ -49,56 +44,9 @@ func (s *Server) GetAuthGoogleCallback(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Google authentication failed"})
 		return
 	}
-
-	fmt.Println("ID TOKEN:", user.IDToken)
-
-	newUser.Name = user.Name
-	newUser.Email = user.Email
-	newUser.Foto_url = &user.AvatarURL
-
-	id, err := s.userService.Create(newUser)
-
-	if err != nil || id == 0 {
-		s.logger.Println(err.Error())
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{
-				"code":    http.StatusInternalServerError,
-				"message": err.Error(),
-			},
-		})
-		return
-	}
-
-	newUserAuth.UserID = id
-	newUserAuth.ProviderUserID = user.UserID
-	newUserAuth.Provider = user.Provider
-
-	_, err = s.userAuthService.Create(newUserAuth)
-
-	if err != nil {
-		s.logger.Println(err.Error())
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{
-				"code":    http.StatusInternalServerError,
-				"message": err.Error(),
-			},
-		})
-		return
-	}
-
-	token, err := newUser.GenerateToken()
-	if err != nil {
-		s.logger.Println(err.Error())
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{
-				"code":    http.StatusInternalServerError,
-				"message": err.Error(),
-			},
-		})
-		return
-	}
-
+	
 	c.JSON(http.StatusOK, gin.H{
-		"Authorization": token,
+		"id_token": user.IDToken,
+		"provider": user.Provider,
 	})
 }
