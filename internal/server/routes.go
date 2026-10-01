@@ -25,16 +25,18 @@ func (s *Server) RegisterRoutes() http.Handler {
 		AllowCredentials: true, // Enable cookies/auth
 	}))
 
-	userRoutes := user.NewRouter(s.userHandler)
-
-	r.GET("/", s.HelloWorldHandler)
 	r.GET("/health", s.healthHandler)
+	r.GET("/", s.HelloWorldHandler)
+
 	r.GET("/login", s.loginHandler)
 	r.POST("/login/v2", s.Login)
 	r.GET("/auth/google", s.GetAuthGoogle)
 	r.GET("/auth/google/callback", s.GetAuthGoogleCallback)
 
-	userRoutes.RegisterRoutes(r.Group("/users"))
+	userRoutes := user.NewRouter(s.userHandler)
+	usersGroup := r.Group("/users")
+	usersGroup.Use(s.AuthMiddleware())
+	userRoutes.RegisterRoutes(usersGroup)
 
 	return r
 }

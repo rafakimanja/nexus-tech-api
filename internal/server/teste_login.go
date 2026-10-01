@@ -98,6 +98,7 @@ func (s *Server) GetAuthGoogleCallback(c *gin.Context) {
 		return
 	}
 
-	c.Header("Authorization", token)
-	c.JSON(http.StatusOK, newUser)
+	c.JSON(http.StatusOK, gin.H{
+		"Authorization": token,
+	})
 }

@@ -3,6 +3,7 @@ package user
 import (
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt"
@@ -30,4 +31,36 @@ func (u *User) GenerateToken() (string, error){
 	}
 
 	return tokenStr, nil
+}
+
+func VerifyToken(tokenValue string) (uint, error) {
+	secret := os.Getenv(JWT_SECRET_KEY)
+
+	token, err := jwt.Parse(RemoveBearerPrefix(tokenValue), func(t *jwt.Token) (interface{}, error) {
+		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("invalid signing method")
+		}
+
+		return []byte(secret), nil
+	})
+
+	if err != nil {
+		return 0, err
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok || !token.Valid {
+		return 0, fmt.Errorf("invalid token")
+	}
+
+	id, ok := claims["id"].(float64)
+	if !ok {
+		return 0, fmt.Errorf("invalid id claim")
+	}
+
+	return uint(id), nil
+}
+
+func RemoveBearerPrefix(token string) string {
+	return strings.TrimPrefix(token, "Bearer ")
 }
