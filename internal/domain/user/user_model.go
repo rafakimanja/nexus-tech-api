@@ -9,8 +9,8 @@ import (
 
 type User struct {
 	gorm.Model
-	Name     string  `json:"name"`
-	Role     string  `json:"role"`
+	Name     string  `json:"name" gorm:"not null"`
+	Role     string  `json:"role" gorm:"not null"`
 	Email    string  `json:"email" gorm:"uniqueIndex;not null"`
 	Foto_url *string `json:"foto_url"`
 }

@@ -35,21 +35,37 @@ var (
 // New opens and reuses the application's GORM connection to PostgreSQL.
 func New() Service {
 	dbOnce.Do(func() {
-		connURL := url.URL{
-			Scheme: "postgres",
-			User:   url.UserPassword(os.Getenv("BLUEPRINT_DB_USERNAME"), os.Getenv("BLUEPRINT_DB_PASSWORD")),
-			Host:   fmt.Sprintf("%s:%s", os.Getenv("BLUEPRINT_DB_HOST"), os.Getenv("BLUEPRINT_DB_PORT")),
-			Path:   os.Getenv("BLUEPRINT_DB_DATABASE"),
+		var dsn string
+		localDB, err := strconv.ParseBool(os.Getenv("LOCAL_DB"))
+		if err != nil && os.Getenv("LOCAL_DB") != "" {
+			dbErr = fmt.Errorf("invalid LOCAL_DB value: %w", err)
+			return
 		}
-		query := connURL.Query()
-		query.Set("sslmode", "disable")
-		if schema := os.Getenv("BLUEPRINT_DB_SCHEMA"); schema != "" {
-			query.Set("search_path", schema)
+
+		if localDB {
+			connURL := url.URL{
+				Scheme: "postgres",
+				User:   url.UserPassword(os.Getenv("BLUEPRINT_DB_USERNAME"), os.Getenv("BLUEPRINT_DB_PASSWORD")),
+				Host:   fmt.Sprintf("%s:%s", os.Getenv("BLUEPRINT_DB_HOST"), os.Getenv("BLUEPRINT_DB_PORT")),
+				Path:   os.Getenv("BLUEPRINT_DB_DATABASE"),
+			}
+			query := connURL.Query()
+			query.Set("sslmode", "disable")
+			if schema := os.Getenv("BLUEPRINT_DB_SCHEMA"); schema != "" {
+				query.Set("search_path", schema)
+			}
+			connURL.RawQuery = query.Encode()
+			dsn = connURL.String()
+		} else {
+			dsn = os.Getenv("DATABASE_URL")
+			if dsn == "" {
+				dbErr = fmt.Errorf("DATABASE_URL must be set when LOCAL_DB is not enabled")
+				return
+			}
 		}
-		connURL.RawQuery = query.Encode()
 
 		var db *gorm.DB
-		db, dbErr = gorm.Open(postgres.Open(connURL.String()), &gorm.Config{})
+		db, dbErr = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 		if dbErr == nil {
 			dbInstance = &service{db: db}
 		}

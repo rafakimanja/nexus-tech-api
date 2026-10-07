@@ -9,6 +9,10 @@ import (
 	"time"
 
 	"api/internal/database"
+	"api/internal/domain/applicant"
+	"api/internal/domain/areas"
+	"api/internal/domain/demand"
+	"api/internal/domain/teacher"
 	"api/internal/domain/uauth"
 	"api/internal/domain/user"
 
@@ -43,6 +47,10 @@ func NewServer(
 
 	NewServer.db.DB().AutoMigrate(&user.User{})
 	NewServer.db.DB().AutoMigrate(&uauth.UserAuth{})
+	NewServer.db.DB().AutoMigrate(&teacher.Professor{})
+	NewServer.db.DB().AutoMigrate(&applicant.Demandante{})
+	NewServer.db.DB().AutoMigrate(&demand.Demanda{})
+	NewServer.db.DB().AutoMigrate(&areas.Area{})
 
 	// Declare Server config
 	server := &http.Server{
