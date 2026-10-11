@@ -15,5 +15,6 @@ func (r *TeacherRouter) RegisterRoutes(router *gin.RouterGroup) {
 	router.GET("/", r.handler.GetTeachers)
 	router.GET("/:id", r.handler.GetTeacherByID)
 	router.PUT("/:id", r.handler.UpdateTeacher)
+	router.PUT("/:id/areas", r.handler.UpdateAreasTeacher)
 	router.DELETE("/:id", r.handler.DeleteTeacher)
 }

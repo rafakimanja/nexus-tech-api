@@ -1,0 +1,18 @@
+info:
+  name: Get Demandas
+  type: http
+  seq: 1
+
+http:
+  method: GET
+  url: "{{url}}/demands"
+  auth:
+    type: bearer
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3OTE3NTU2NTgsImlkIjoxLCJyb2xlIjoiIn0.1yuHKsukK8Jlyv1koTSDxtP1OdkE_dkAaWCzt6T66J0
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

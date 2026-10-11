@@ -1,6 +1,7 @@
 package teacher
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -19,11 +20,19 @@ func NewHandler(service TeacherService, logger *log.Logger) *TeacherHandler {
 
 func (h *TeacherHandler) GetTeachers(c *gin.Context) {
 	professors, err := h.service.GetAll()
+	var professoresDTO []ProfessorDTO
+
 	if err != nil {
 		h.respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, professors)
+
+	for _, p := range(professors) {
+		newDTO := p.NewDTO()
+		professoresDTO = append(professoresDTO, newDTO)
+	}
+
+	c.JSON(http.StatusOK, professoresDTO)
 }
 
 func (h *TeacherHandler) GetTeacherByID(c *gin.Context) {
@@ -38,12 +47,13 @@ func (h *TeacherHandler) GetTeacherByID(c *gin.Context) {
 		h.respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, professor)
+	c.JSON(http.StatusOK, professor.NewDTO())
 }
 
 func (h *TeacherHandler) CreateTeacher(c *gin.Context) {
 	var professor Professor
 	if err := c.ShouldBindJSON(&professor); err != nil {
+		fmt.Printf("JSON Professor recebido: %v\n", professor)
 		h.respondError(c, http.StatusBadRequest, "objeto 'Professor' invalido")
 		return
 	}
@@ -74,6 +84,31 @@ func (h *TeacherHandler) UpdateTeacher(c *gin.Context) {
 	}
 
 	if err := h.service.Update(id, professor); err != nil {
+		h.respondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
+func (h *TeacherHandler) UpdateAreasTeacher(c *gin.Context){
+
+	type AttAreas struct {
+		AreasIDs []uint `json:"areas_ids" binding:"required"`
+	}
+
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		h.respondError(c, http.StatusBadRequest, "invalid ID")
+		return
+	}
+
+	var areas AttAreas
+	if err := c.ShouldBindJSON(&areas); err != nil {
+		h.respondError(c, http.StatusBadRequest, "invalid object")
+		return
+	}
+
+	if err := h.service.UpdateAreas(id, areas.AreasIDs); err != nil {
 		h.respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}

@@ -11,6 +11,10 @@ import (
 
 	"api/internal/auth"
 	"api/internal/database"
+	"api/internal/domain/applicant"
+	"api/internal/domain/areas"
+	"api/internal/domain/demand"
+	"api/internal/domain/teacher"
 	"api/internal/domain/uauth"
 	"api/internal/domain/user"
 	"api/internal/server"
@@ -52,11 +56,41 @@ func main() {
 	userAuthRepository := uauth.NewRepository(db.DB())
 	userAuthService := uauth.NewService(userAuthRepository)
 
+	demandRepository := demand.NewRepository(db.DB())
+	demandService := demand.NewService(demandRepository)
+	demandHandler := demand.NewHandler(demandService, logger)
+
+	applicantRepository := applicant.NewRepository(db.DB())
+	applicantService := applicant.NewService(applicantRepository)
+	applicantHandler := applicant.NewHandler(applicantService, logger)
+
+	areasRepository := areas.NewRepository(db.DB())
+	areasService := areas.NewService(areasRepository)
+	areasHandler := areas.NewHandler(areasService, logger)
+
+	teacherRepository := teacher.NewRepository(db.DB())
+	teacherService := teacher.NewService(teacherRepository, userRepository)
+	teacherHandler := teacher.NewHandler(teacherService, logger)
+
 	if err := auth.NewAuth(); err != nil {
 		log.Fatalf("authentication configuration error: %v", err)
 	}
 
-	server := server.NewServer(db, logger, userService, userHandler,userAuthService)
+	server := server.NewServer(
+		db,
+		logger,
+		userService,
+		userHandler,
+		userAuthService,
+		demandService,
+		demandHandler,
+		applicantService,
+		applicantHandler,
+		areasService,
+		areasHandler,
+		teacherService,
+		teacherHandler,
+	)
 
 	// Create a done channel to signal when the shutdown is complete
 	done := make(chan bool, 1)

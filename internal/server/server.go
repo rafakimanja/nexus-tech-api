@@ -20,12 +20,20 @@ import (
 )
 
 type Server struct {
-	port            int
-	userService     user.UserService
-	userHandler     *user.UserHandler
-	userAuthService uauth.UAuthService
-	db              database.Service
-	logger          *log.Logger
+	port             int
+	userService      user.UserService
+	userHandler      *user.UserHandler
+	userAuthService  uauth.UAuthService
+	demandService    demand.DemandaService
+	demandHandler    *demand.DemandaHandler
+	applicantService applicant.ApplicantService
+	applicantHandler *applicant.ApplicantHandler
+	areasService     areas.AreasService
+	areasHandler     *areas.AreasHandler
+	teacherService   teacher.TeacherService
+	teacherHandler   *teacher.TeacherHandler
+	db               database.Service
+	logger           *log.Logger
 }
 
 func NewServer(
@@ -34,15 +42,31 @@ func NewServer(
 	userService user.UserService,
 	userHandler *user.UserHandler,
 	userAuthService uauth.UAuthService,
+	demandService demand.DemandaService,
+	demandHandler *demand.DemandaHandler,
+	applicantService applicant.ApplicantService,
+	applicantHandler *applicant.ApplicantHandler,
+	areasService areas.AreasService,
+	areasHandler *areas.AreasHandler,
+	teacherService teacher.TeacherService,
+	teacherHandler *teacher.TeacherHandler,
 ) *http.Server {
 	port, _ := strconv.Atoi(os.Getenv("PORT"))
 	NewServer := &Server{
-		port:            port,
-		db:              db,
-		logger:          logger,
-		userService:     userService,
-		userHandler:     userHandler,
-		userAuthService: userAuthService,
+		port:             port,
+		db:               db,
+		logger:           logger,
+		userService:      userService,
+		userHandler:      userHandler,
+		userAuthService:  userAuthService,
+		demandService:    demandService,
+		demandHandler:    demandHandler,
+		applicantService: applicantService,
+		applicantHandler: applicantHandler,
+		areasService:     areasService,
+		areasHandler:     areasHandler,
+		teacherService:   teacherService,
+		teacherHandler:   teacherHandler,
 	}
 
 	NewServer.db.DB().AutoMigrate(&user.User{})

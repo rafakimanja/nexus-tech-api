@@ -1,0 +1,26 @@
+info:
+  name: Novo Professor
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{url}}/teachers"
+  body:
+    type: json
+    data: |-
+      {
+        "id": 2,
+        "siape": 12345678,
+        "is_active": true
+      }
+  auth:
+    type: bearer
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3OTE3NTY2NjMsImlkIjoyLCJyb2xlIjoicHJvZmVzc29yIn0.j9um6pebZzqkJhcKU_86GOTW-Ca-rTKIt6MDTMMH4cc
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
