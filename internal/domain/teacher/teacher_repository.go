@@ -20,13 +20,13 @@ func NewRepository(db *gorm.DB) TeacherRepository {
 
 func (r *repository) FindByID(id int) (Professor, error) {
 	var professor Professor
-	err := r.db.Preload("User").First(&professor, id).Error
+	err := r.db.Preload("User").Preload("ProfessorAreas.Area").First(&professor, id).Error
 	return professor, err
 }
 
 func (r *repository) FindAll() ([]Professor, error) {
 	var professors []Professor
-	err := r.db.Preload("User").Find(&professors).Error
+	err := r.db.Preload("User").Preload("ProfessorAreas.Area").Find(&professors).Error
 	return professors, err
 }
 

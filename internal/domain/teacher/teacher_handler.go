@@ -19,20 +19,17 @@ func NewHandler(service TeacherService, logger *log.Logger) *TeacherHandler {
 }
 
 func (h *TeacherHandler) GetTeachers(c *gin.Context) {
-	professors, err := h.service.GetAll()
-	var professoresDTO []ProfessorDTO
-
+	professores, err := h.service.GetAll()
 	if err != nil {
 		h.respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	for _, p := range(professors) {
-		newDTO := p.NewDTO()
-		professoresDTO = append(professoresDTO, newDTO)
+	dtos := make([]ProfessorDTO, 0, len(professores))
+	for _, professor := range professores {
+		dtos = append(dtos, professor.NewDTO())
 	}
-
-	c.JSON(http.StatusOK, professoresDTO)
+	c.JSON(http.StatusOK, dtos)
 }
 
 func (h *TeacherHandler) GetTeacherByID(c *gin.Context) {
@@ -90,25 +87,23 @@ func (h *TeacherHandler) UpdateTeacher(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-func (h *TeacherHandler) UpdateAreasTeacher(c *gin.Context){
-
-	type AttAreas struct {
-		AreasIDs []uint `json:"areas_ids" binding:"required"`
-	}
-
+func (h *TeacherHandler) UpdateAreasTeacher(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		h.respondError(c, http.StatusBadRequest, "invalid ID")
 		return
 	}
 
-	var areas AttAreas
-	if err := c.ShouldBindJSON(&areas); err != nil {
+	var request struct {
+		AreasID uint   `json:"areas_id"`
+		Type    string `json:"type"`
+	}
+	if err := c.ShouldBindJSON(&request); err != nil {
 		h.respondError(c, http.StatusBadRequest, "invalid object")
 		return
 	}
 
-	if err := h.service.UpdateAreas(id, areas.AreasIDs); err != nil {
+	if err := h.service.UpdateAreas(id, request.AreasID, request.Type); err != nil {
 		h.respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}

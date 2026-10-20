@@ -23,12 +23,7 @@ func (h *AreasHandler) GetAreas(c *gin.Context) {
 		h.respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-
-	dtos := make([]AreaDTO, 0, len(areas))
-	for i := range areas {
-		dtos = append(dtos, areas[i].NewDTO())
-	}
-	c.JSON(http.StatusOK, dtos)
+	c.JSON(http.StatusOK, areas)
 }
 
 func (h *AreasHandler) GetAreaByID(c *gin.Context) {
@@ -43,7 +38,7 @@ func (h *AreasHandler) GetAreaByID(c *gin.Context) {
 		h.respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, area.NewDTO())
+	c.JSON(http.StatusOK, area)
 }
 
 func (h *AreasHandler) CreateArea(c *gin.Context) {

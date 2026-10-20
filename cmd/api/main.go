@@ -13,6 +13,7 @@ import (
 	"api/internal/database"
 	"api/internal/domain/applicant"
 	"api/internal/domain/areas"
+	"api/internal/domain/areas_teacher"
 	"api/internal/domain/demand"
 	"api/internal/domain/teacher"
 	"api/internal/domain/uauth"
@@ -68,8 +69,12 @@ func main() {
 	areasService := areas.NewService(areasRepository)
 	areasHandler := areas.NewHandler(areasService, logger)
 
+	areasTeacherRepository := areas_teacher.NewRepository(db.DB())
+	areasTeacherService := areas_teacher.NewService(areasTeacherRepository)
+	areasTeacherHandler := areas_teacher.NewHandler(areasTeacherService, logger)
+
 	teacherRepository := teacher.NewRepository(db.DB())
-	teacherService := teacher.NewService(teacherRepository, userRepository)
+	teacherService := teacher.NewService(teacherRepository, userRepository, areasTeacherService)
 	teacherHandler := teacher.NewHandler(teacherService, logger)
 
 	if err := auth.NewAuth(); err != nil {
@@ -88,6 +93,7 @@ func main() {
 		applicantHandler,
 		areasService,
 		areasHandler,
+		areasTeacherHandler,
 		teacherService,
 		teacherHandler,
 	)

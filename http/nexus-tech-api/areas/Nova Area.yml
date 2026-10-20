@@ -1,0 +1,24 @@
+info:
+  name: Nova Area
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{url}}/areas"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Programação Web"
+      }
+  auth:
+    type: bearer
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3OTI1MDg0NDksImlkIjoxLCJyb2xlIjoiYWRtaW4ifQ.Rk1g3-bjS3OK3MlKwYSOAIYl6oMs8mJgTlBN_ya-yL0
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

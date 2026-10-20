@@ -3,6 +3,7 @@ package server
 import (
 	"api/internal/domain/applicant"
 	"api/internal/domain/areas"
+	"api/internal/domain/areas_teacher"
 	"api/internal/domain/demand"
 	"api/internal/domain/teacher"
 	"api/internal/domain/uauth"
@@ -56,6 +57,11 @@ func (s *Server) RegisterRoutes() http.Handler {
 	areasGroup := r.Group("/areas")
 	areasGroup.Use(s.AuthMiddleware())
 	areasRoutes.RegisterRoutes(areasGroup)
+
+	areasTeacherRoutes := areas_teacher.NewRouter(s.areasTeacherHandler)
+	areasTeacherGroup := r.Group("/areas-teachers")
+	areasTeacherGroup.Use(s.AuthMiddleware())
+	areasTeacherRoutes.RegisterRoutes(areasTeacherGroup)
 
 	teacherRoutes := teacher.NewRouter(s.teacherHandler)
 	teachersGroup := r.Group("/teachers")

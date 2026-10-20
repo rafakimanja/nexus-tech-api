@@ -42,7 +42,7 @@ func (r *repository) Update(id int, area Area) error {
 	}
 
 	return r.db.Model(&existing).
-		Select("Name", "Key", "Type").
+		Select("Name").
 		Updates(&area).Error
 }
 
