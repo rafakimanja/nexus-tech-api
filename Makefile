@@ -12,6 +12,13 @@ build:
 # Run the application
 run:
 	@go run cmd/api/main.go
+
+# Prepare the schema and insert idempotent development data without starting the API
+seed:
+	@go run ./cmd/seed
+# Generate embeddings for demands without vectors
+embeddings:
+	@go run ./cmd/embeddings
 # Create DB container
 docker-run:
 	@if docker compose up --build 2>/dev/null; then \
@@ -61,4 +68,4 @@ watch:
             fi; \
         fi
 
-.PHONY: all build run test clean watch docker-run docker-down itest
+.PHONY: all build run seed embeddings test clean watch docker-run docker-down itest

@@ -22,6 +22,17 @@ Run the application
 ```bash
 make run
 ```
+
+Populate the database independently from the API (requires the same database
+environment variables as the API, loaded from `.env` or the shell):
+```bash
+make seed
+```
+This creates/updates the schema and inserts development areas plus one sample
+demandante and professor. It is safe to run more than once. To run directly:
+```bash
+go run ./cmd/seed
+```
 Create DB container
 ```bash
 make docker-run
