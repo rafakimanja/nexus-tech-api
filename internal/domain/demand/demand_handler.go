@@ -1,6 +1,7 @@
 package demand
 
 import (
+	"api/internal/server"
 	"log"
 	"net/http"
 	"strconv"
@@ -10,11 +11,12 @@ import (
 
 type DemandaHandler struct {
 	service DemandaService
+	embed server.Emb
 	logger  *log.Logger
 }
 
-func NewHandler(service DemandaService, logger *log.Logger) *DemandaHandler {
-	return &DemandaHandler{service: service, logger: logger}
+func NewHandler(service DemandaService, embed server.Emb, logger *log.Logger) *DemandaHandler {
+	return &DemandaHandler{service: service, embed: embed, logger: logger}
 }
 
 func (h *DemandaHandler) GetDemandas(c *gin.Context) {
@@ -87,6 +89,29 @@ func (h *DemandaHandler) DeleteDemanda(c *gin.Context) {
 		h.respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
+	c.Status(http.StatusNoContent)
+}
+
+func (h *DemandaHandler) GetSuggestDemand(c *gin.Context){
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		h.respondError(c, http.StatusBadRequest, "invalid ID")
+		return
+	}
+
+	demanda, err := h.service.GetByID(id)
+	if err != nil {
+		h.respondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	if demanda.IsCancelled == true {
+		h.respondError(c, http.StatusBadRequest, "Esta demanda foi cancelada")
+		return
+	}
+
+	h.embed.CompareEmbeddings(demanda.Embedding)
+
 	c.Status(http.StatusNoContent)
 }
 

@@ -16,11 +16,10 @@ func main() {
 	}()
 
 	db := dbService.DB()
-	emb := server.NewEmbeddingService(db )
 
 	log.Println("Gerando embeddings das areas...")
 
-	if err := emb.UpdateMissingAreasEmbeddings(); err != nil {
+	if err := server.UpdateMissingAreasEmbeddings(db); err != nil {
 		log.Fatalf("Erro ao gerar embeddings: %v", err)
 	}
 

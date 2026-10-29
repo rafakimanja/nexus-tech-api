@@ -3,6 +3,7 @@ package server
 import (
 	"api/internal/domain/areas"
 	"api/internal/domain/demand"
+
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -16,17 +17,7 @@ import (
 
 const OLLAMA_URL = "OLLAMA_URL"
 
-type Emb struct {
-	db *gorm.DB
-}
-
-func NewEmbeddingService(db *gorm.DB) Emb {
-	return Emb{
-		db: db,
-	}
-}
-
-func(e Emb) GenerateEmbedding(text string)(*pgvector.Vector, error){
+func GenerateEmbedding(text string)(*pgvector.Vector, error){
 	url := os.Getenv(OLLAMA_URL)
 
 	payload, _ := json.Marshal(map[string]string{
@@ -61,36 +52,36 @@ func(e Emb) GenerateEmbedding(text string)(*pgvector.Vector, error){
 	return &vector, nil
 }
 
-func(e Emb) UpdateDemandEmbedding(demanda *demand.Demanda) error {
+func UpdateDemandEmbedding(demanda *demand.Demanda, db *gorm.DB) error {
 	text := demanda.ToEmbeddingText()
 
-	embedding, err := e.GenerateEmbedding(text)
+	embedding, err := GenerateEmbedding(text)
 	if err != nil {
 		return err
 	}
 
-	return e.db.Model(demanda).Update("embedding", embedding).Error
+	return db.Model(demanda).Update("embedding", embedding).Error
 }
 
-func(e Emb) UpdateAreaEmbeddings(area *areas.Area) error {
-	embedding, err := e.GenerateEmbedding(area.Name)
+func UpdateAreaEmbeddings(area *areas.Area, db *gorm.DB) error {
+	embedding, err := GenerateEmbedding(area.Name)
 	if err != nil {
 		return err
 	}
 
-	return e.db.Model(area).Update("embedding", embedding).Error
+	return db.Model(area).Update("embedding", embedding).Error
 }
 
-func(e Emb) UpdateMissingDemandEmbeddings() error {
+func UpdateMissingDemandEmbeddings(db *gorm.DB) error {
 	var demandas []demand.Demanda
 
-	if err := e.db.Where("embedding IS NULL").
+	if err := db.Where("embedding IS NULL").
 		Find(&demandas).Error; err != nil {
 		return err
 	}
 
 	for i := range demandas {
-		if err := e.UpdateDemandEmbedding(&demandas[i]); err != nil {
+		if err := UpdateDemandEmbedding(&demandas[i], db); err != nil {
 			return fmt.Errorf(
 				"erro na demanda %d: %w",
 				demandas[i].ID,
@@ -102,16 +93,16 @@ func(e Emb) UpdateMissingDemandEmbeddings() error {
 	return nil
 }
 
-func(e Emb) UpdateMissingAreasEmbeddings() error {
+func UpdateMissingAreasEmbeddings(db *gorm.DB) error {
 	var areas []areas.Area
 
-	if err := e.db.Where("embedding IS NULL").
+	if err := db.Where("embedding IS NULL").
 		Find(&areas).Error; err != nil {
 		return err
 	}
 
 	for i := range areas {
-		if err := e.UpdateAreaEmbeddings(&areas[i]); err != nil {
+		if err := UpdateAreaEmbeddings(&areas[i], db); err != nil {
 			return fmt.Errorf(
 				"erro na demanda %d: %w",
 				areas[i].ID,
@@ -121,4 +112,8 @@ func(e Emb) UpdateMissingAreasEmbeddings() error {
 	}
 
 	return nil
+}
+
+func CompareEmbeddings(demandEmbed *pgvector.Vector){
+
 }

@@ -1,0 +1,5 @@
+1. Buscar o embedding da demanda.
+2. Comparar com os embeddings de todas as áreas e calcular a similaridade.
+3. Buscar os professores vinculados às áreas compatíveis, incluindo o tipo da associação (technical ou interest).
+4. Calcular a pontuação de cada professor, aplicando pesos diferentes para cada tipo de área.
+5. Ordenar os professores pela pontuação final e retornar o mais compatível — ou uma lista ordenada.
