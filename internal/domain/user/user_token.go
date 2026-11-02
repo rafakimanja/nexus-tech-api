@@ -2,6 +2,7 @@ package user
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"strings"
 	"time"
@@ -9,17 +10,34 @@ import (
 	"github.com/golang-jwt/jwt"
 )
 
-var (
-	JWT_SECRET_KEY = "JWT_SECRECT_KEY"
-)
+const SessionDuration = 12 * time.Hour
 
-func (u *User) GenerateToken() (string, error){
-	secret := os.Getenv(JWT_SECRET_KEY)
+func jwtSecret() ([]byte, error) {
+	secret, configured := os.LookupEnv("JWT_SECRET_KEY")
+	if !configured {
+		secret = os.Getenv("JWT_SECRECT_KEY")
+	}
+	if len(strings.TrimSpace(secret)) < 32 {
+		return nil, fmt.Errorf("JWT_SECRET_KEY must contain at least 32 characters")
+	}
+	return []byte(secret), nil
+}
+
+func ValidateJWTConfig() error { _, err := jwtSecret(); return err }
+
+func (u *User) GenerateSessionToken() (string, time.Time, error) {
+	secret, err := jwtSecret()
+	if err != nil {
+		return "", time.Time{}, err
+	}
+	now := time.Now().UTC().Truncate(time.Second)
+	expires := now.Add(SessionDuration)
 
 	claims := jwt.MapClaims{
-		"id": u.ID,
+		"id":   u.ID,
 		"role": u.Role,
-		"exp": time.Now().Add(time.Hour * 1).Unix(),
+		"iat":  now.Unix(),
+		"exp":  expires.Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -27,17 +45,25 @@ func (u *User) GenerateToken() (string, error){
 	tokenStr, err := token.SignedString([]byte(secret))
 
 	if err != nil {
-		return "", fmt.Errorf("Erro ao gerar token JWT, err=%s", err.Error())
+		return "", time.Time{}, fmt.Errorf("Erro ao gerar token JWT, err=%s", err.Error())
 	}
 
-	return tokenStr, nil
+	return tokenStr, expires, nil
+}
+
+func (u *User) GenerateToken() (string, error) {
+	token, _, err := u.GenerateSessionToken()
+	return token, err
 }
 
 func VerifyToken(tokenValue string) (uint, error) {
-	secret := os.Getenv(JWT_SECRET_KEY)
+	secret, err := jwtSecret()
+	if err != nil {
+		return 0, err
+	}
 
 	token, err := jwt.Parse(RemoveBearerPrefix(tokenValue), func(t *jwt.Token) (interface{}, error) {
-		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+		if t.Method != jwt.SigningMethodHS256 {
 			return nil, fmt.Errorf("invalid signing method")
 		}
 
@@ -54,10 +80,14 @@ func VerifyToken(tokenValue string) (uint, error) {
 	}
 
 	id, ok := claims["id"].(float64)
-	if !ok {
+	if !ok || id < 1 || id > math.MaxUint32 || id != math.Trunc(id) {
 		return 0, fmt.Errorf("invalid id claim")
 	}
 
+	exp, ok := claims["exp"].(float64)
+	if !ok || exp <= float64(time.Now().Unix()) {
+		return 0, fmt.Errorf("invalid or expired token")
+	}
 	return uint(id), nil
 }
 

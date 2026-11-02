@@ -48,6 +48,9 @@ func gracefulShutdown(apiServer *http.Server, done chan bool) {
 }
 
 func main() {
+	if err := user.ValidateJWTConfig(); err != nil {
+		log.Fatalf("authentication configuration error: %v", err)
+	}
 	db := database.New()
 	logger := log.Default()
 	embedder := embedding.NewProcessor(db.DB())

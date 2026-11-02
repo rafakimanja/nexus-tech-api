@@ -13,15 +13,18 @@ import (
 	"api/internal/domain/areas"
 	"api/internal/domain/areas_teacher"
 	"api/internal/domain/demand"
+	"api/internal/domain/session"
 	"api/internal/domain/teacher"
 	"api/internal/domain/uauth"
 	"api/internal/domain/user"
 
 	_ "github.com/joho/godotenv/autoload"
+	"google.golang.org/api/idtoken"
 	"gorm.io/gorm"
 )
 
 type Server struct {
+	sessionService      *session.Service
 	port                int
 	userService         user.UserService
 	userHandler         *user.UserHandler
@@ -57,6 +60,7 @@ func NewServer(
 ) *http.Server {
 	port, _ := strconv.Atoi(os.Getenv("PORT"))
 	NewServer := &Server{
+		sessionService:      session.NewService(session.NewRepository(db.DB()), os.Getenv("GOOGLE_CLIENT_ID"), idtoken.Validate),
 		port:                port,
 		db:                  db,
 		logger:              logger,
@@ -74,8 +78,9 @@ func NewServer(
 		teacherHandler:      teacherHandler,
 	}
 
-	NewServer.db.DB().AutoMigrate(&user.User{})
-	NewServer.db.DB().AutoMigrate(&uauth.UserAuth{})
+	if err := NewServer.db.DB().AutoMigrate(&user.User{}, &uauth.UserAuth{}); err != nil {
+		log.Fatalf("could not migrate identity schema: %v", err)
+	}
 	NewServer.db.DB().AutoMigrate(&areas.Area{})
 	areaRelationsReady := migrateProfessorAreas(NewServer.db.DB())
 	NewServer.db.DB().AutoMigrate(&areas_teacher.ProfessorArea{})
