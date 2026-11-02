@@ -50,7 +50,7 @@ go run ./cmd/embeddings
 
 O próprio professor autenticado pode consultar
 `GET /teachers/:id/recommendations?limit=10` (limite de 1 a 100). São
-consideradas demandas em `Em análise`, não canceladas, sem professor atribuído
+consideradas demandas com status `cadastrada`, não canceladas, sem professor atribuído
 e com embedding disponível. Áreas técnicas recebem peso 0,8 e áreas de
 interesse, 0,5; a melhor correspondência determina a ordem. Similaridades
 negativas são tratadas como zero. Professor sem áreas utilizáveis recebe uma

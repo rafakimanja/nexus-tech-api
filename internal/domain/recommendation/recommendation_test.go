@@ -51,7 +51,18 @@ func TestRecommendationsPostgres(t *testing.T) {
 	if err := db.Exec(`INSERT INTO professor_areas VALUES (1, 1, 'técnica', NULL), (1, 2, 'interesse', NULL)`).Error; err != nil {
 		t.Fatal(err)
 	}
-	for _, args := range [][]any{{1, "technical", v1, nil, false, "Em análise"}, {2, "interest", v2, nil, false, "Em análise"}, {3, "assigned", v1, 1, false, "Em análise"}, {4, "cancelled", v1, nil, true, "Em análise"}, {5, "other status", v1, nil, false, "Em desenvolvimento"}, {6, "pending", nil, nil, false, "Em análise"}} {
+	for _, args := range [][]any{
+		{1, "technical", v1, nil, false, "cadastrada"},
+		{2, "interest", v2, nil, false, "cadastrada"},
+		{3, "assigned", v1, 1, false, "cadastrada"},
+		{4, "cancelled", v1, nil, true, "cadastrada"},
+		{5, "in production", v1, nil, false, "emProducao"},
+		{6, "pending", nil, nil, false, "cadastrada"},
+		{7, "under analysis", v1, nil, false, "emAnalise"},
+		{8, "legacy analysis", v1, nil, false, "Em análise"},
+		{9, "completed", v1, nil, false, "concluida"},
+		{10, "cancelled status", v1, nil, false, "cancelada"},
+	} {
 		if err := db.Exec(`INSERT INTO demandas VALUES (?, ?, ?::vector, ?, ?, ?, NULL)`, args...).Error; err != nil {
 			t.Fatal(err)
 		}

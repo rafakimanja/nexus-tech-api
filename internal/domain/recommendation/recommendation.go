@@ -79,7 +79,7 @@ func (h *Handler) Get(c *gin.Context) {
 				JOIN professor_areas pa ON pa.professor_id = ? AND pa.deleted_at IS NULL
 				JOIN areas a ON a.id = pa.areas_id
 				WHERE d.deleted_at IS NULL AND d.professor_id IS NULL
-					AND d.is_cancelled = false AND lower(trim(d.status)) = 'em análise'
+					AND d.is_cancelled = false AND lower(trim(d.status)) = 'cadastrada'
 					AND d.embedding IS NOT NULL AND a.embedding IS NOT NULL
 					AND pa.type IN ('técnica', 'interesse')
 				ORDER BY d.id, score DESC, a.id ASC
