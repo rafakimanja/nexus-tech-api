@@ -18,6 +18,7 @@ import (
 	"api/internal/domain/teacher"
 	"api/internal/domain/uauth"
 	"api/internal/domain/user"
+	"api/internal/embedding"
 	"api/internal/server"
 )
 
@@ -49,6 +50,7 @@ func gracefulShutdown(apiServer *http.Server, done chan bool) {
 func main() {
 	db := database.New()
 	logger := log.Default()
+	embedder := embedding.NewProcessor(db.DB())
 
 	userRepository := user.NewRepository(db.DB())
 	userService := user.NewService(userRepository)
@@ -58,7 +60,7 @@ func main() {
 	userAuthService := uauth.NewService(userAuthRepository)
 
 	demandRepository := demand.NewRepository(db.DB())
-	demandService := demand.NewService(demandRepository)
+	demandService := demand.NewService(demandRepository, embedder)
 	demandHandler := demand.NewHandler(demandService, logger)
 
 	applicantRepository := applicant.NewRepository(db.DB())
@@ -66,7 +68,7 @@ func main() {
 	applicantHandler := applicant.NewHandler(applicantService, logger)
 
 	areasRepository := areas.NewRepository(db.DB())
-	areasService := areas.NewService(areasRepository)
+	areasService := areas.NewService(areasRepository, embedder)
 	areasHandler := areas.NewHandler(areasService, logger)
 
 	areasTeacherRepository := areas_teacher.NewRepository(db.DB())

@@ -5,6 +5,7 @@ import (
 	"api/internal/domain/areas"
 	"api/internal/domain/areas_teacher"
 	"api/internal/domain/demand"
+	"api/internal/domain/recommendation"
 	"api/internal/domain/teacher"
 	"api/internal/domain/uauth"
 	"api/internal/domain/user"
@@ -67,6 +68,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 	teachersGroup := r.Group("/teachers")
 	teachersGroup.Use(s.AuthMiddleware())
 	teacherRoutes.RegisterRoutes(teachersGroup)
+	teachersGroup.GET("/:id/recommendations", recommendation.NewHandler(s.db.DB()).Get)
 
 	return r
 }

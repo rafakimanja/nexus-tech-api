@@ -81,7 +81,12 @@ func NewServer(
 	NewServer.db.DB().AutoMigrate(&areas_teacher.ProfessorArea{})
 	NewServer.db.DB().AutoMigrate(&teacher.Professor{})
 	NewServer.db.DB().AutoMigrate(&applicant.Demandante{})
-	NewServer.db.DB().AutoMigrate(&demand.Demanda{})
+	if err := NewServer.db.DB().AutoMigrate(&demand.Demanda{}); err != nil {
+		log.Fatalf("could not migrate demands: %v", err)
+	}
+	if err := NewServer.db.DB().Exec("ALTER TABLE demandas ALTER COLUMN professor_id DROP NOT NULL").Error; err != nil {
+		log.Fatalf("could not make demand professor optional: %v", err)
+	}
 	if areaRelationsReady {
 		migrator := NewServer.db.DB().Migrator()
 		if migrator.HasColumn("areas", "type") {

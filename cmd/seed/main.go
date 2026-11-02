@@ -1,4 +1,4 @@
-	// Command seed creates the database schema and inserts development data.
+// Command seed creates the database schema and inserts development data.
 // Run it independently with: go run ./cmd/seed
 package main
 
@@ -33,6 +33,9 @@ func main() {
 	}
 	if err := db.AutoMigrate(models...); err != nil {
 		log.Fatalf("could not migrate database: %v", err)
+	}
+	if err := db.Exec("ALTER TABLE demandas ALTER COLUMN professor_id DROP NOT NULL").Error; err != nil {
+		log.Fatalf("could not make demand professor optional: %v", err)
 	}
 	// Older schema versions may have attached profile-to-user foreign keys to
 	// users instead of their profile tables. Those reversed constraints prevent
@@ -154,9 +157,10 @@ func seedDemoRecords(db *gorm.DB) error {
 		{"Melhoria da rede do laboratório (Demo)", "Avaliar a cobertura e sugerir melhorias para a rede do laboratório de informática.", "Aberta", "Redes de Computadores", 0, 2},
 	}
 	for _, spec := range demandSpecs {
+		professorID := professors[spec.professor].ID
 		entry := demand.Demanda{
 			DemandanteID: requesters[spec.requester].ID,
-			ProfessorID:  professors[spec.professor].ID,
+			ProfessorID:  &professorID,
 			AreaID:       areaIDs[spec.area],
 			Title:        spec.title, Description: spec.description,
 			Status: spec.status, IsCancelled: false,

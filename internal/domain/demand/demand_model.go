@@ -12,8 +12,8 @@ import (
 
 type Demanda struct {
 	gorm.Model
-	DemandanteID    uint             `gorm:"not null"`
-	ProfessorID     uint             `gorm:"not null"`
+	DemandanteID    uint `gorm:"not null"`
+	ProfessorID     *uint
 	AreaID          uint             `gorm:"not null"`
 	Title           string           `gorm:"not null"`
 	Description     string           `gorm:"not null"`
@@ -27,7 +27,7 @@ type Demanda struct {
 	Areas      areas.Area           `gorm:"foreignKey:AreaID;references:ID"`
 }
 
-func(d Demanda) ToEmbeddingText() string {
+func (d Demanda) ToEmbeddingText() string {
 	return fmt.Sprintf(
 		"Titulo: %s\nDescrição: %s",
 		d.Title,

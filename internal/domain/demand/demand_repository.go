@@ -31,6 +31,7 @@ func (r *repository) FindAll() ([]Demanda, error) {
 }
 
 func (r *repository) Create(demanda Demanda) (uint, error) {
+	demanda.Embedding = nil
 	err := r.db.Create(&demanda).Error
 	return demanda.ID, err
 }
@@ -42,9 +43,12 @@ func (r *repository) Update(id int, demanda Demanda) error {
 	}
 
 	demanda.ID = existing.ID
-	return r.db.Model(&existing).
-		Select("DemandanteID", "ProfessorID", "AreaID", "Title", "Description", "Status", "IsCancelled", "ReasonCancelled").
-		Updates(&demanda).Error
+	return r.db.Model(&existing).Updates(map[string]any{
+		"demandante_id": demanda.DemandanteID, "professor_id": demanda.ProfessorID,
+		"area_id": demanda.AreaID, "title": demanda.Title, "description": demanda.Description,
+		"status": demanda.Status, "is_cancelled": demanda.IsCancelled, "reason_cancelled": demanda.ReasonCancelled,
+		"embedding": gorm.Expr("CASE WHEN title IS DISTINCT FROM ? OR description IS DISTINCT FROM ? THEN NULL ELSE embedding END", demanda.Title, demanda.Description),
+	}).Error
 }
 
 func (r *repository) Delete(id int) error {

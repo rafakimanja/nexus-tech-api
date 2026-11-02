@@ -31,6 +31,7 @@ func (r *repository) FindAll() ([]Area, error) {
 }
 
 func (r *repository) Create(area Area) (uint, error) {
+	area.Embedding = nil
 	err := r.db.Create(&area).Error
 	return area.ID, err
 }
@@ -41,9 +42,10 @@ func (r *repository) Update(id int, area Area) error {
 		return err
 	}
 
-	return r.db.Model(&existing).
-		Select("Name").
-		Updates(&area).Error
+	return r.db.Model(&existing).Updates(map[string]any{
+		"name":      area.Name,
+		"embedding": gorm.Expr("CASE WHEN name IS DISTINCT FROM ? THEN NULL ELSE embedding END", area.Name),
+	}).Error
 }
 
 func (r *repository) Delete(id int) error {

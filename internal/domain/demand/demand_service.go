@@ -1,5 +1,7 @@
 package demand
 
+import "log"
+
 type DemandaService interface {
 	GetAll() ([]Demanda, error)
 	GetByID(id int) (Demanda, error)
@@ -9,11 +11,12 @@ type DemandaService interface {
 }
 
 type service struct {
-	repo DemandaRepository
+	repo     DemandaRepository
+	embedder interface{ ProcessDemand(uint) error }
 }
 
-func NewService(repo DemandaRepository) DemandaService {
-	return &service{repo: repo}
+func NewService(repo DemandaRepository, embedder interface{ ProcessDemand(uint) error }) DemandaService {
+	return &service{repo: repo, embedder: embedder}
 }
 
 func (s *service) GetAll() ([]Demanda, error) {
@@ -25,11 +28,27 @@ func (s *service) GetByID(id int) (Demanda, error) {
 }
 
 func (s *service) Create(demanda Demanda) (uint, error) {
-	return s.repo.Create(demanda)
+	id, err := s.repo.Create(demanda)
+	if err == nil {
+		s.processEmbedding(id)
+	}
+	return id, err
 }
 
 func (s *service) Update(id int, demanda Demanda) error {
-	return s.repo.Update(id, demanda)
+	err := s.repo.Update(id, demanda)
+	if err == nil {
+		s.processEmbedding(uint(id))
+	}
+	return err
+}
+
+func (s *service) processEmbedding(id uint) {
+	if s.embedder != nil {
+		if err := s.embedder.ProcessDemand(id); err != nil {
+			log.Printf("demand %d embedding pending: %v", id, err)
+		}
+	}
 }
 
 func (s *service) DeleteByID(id int) error {

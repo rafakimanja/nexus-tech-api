@@ -1,5 +1,7 @@
 package areas
 
+import "log"
+
 type AreasService interface {
 	GetAll() ([]Area, error)
 	GetByID(id int) (Area, error)
@@ -9,11 +11,12 @@ type AreasService interface {
 }
 
 type service struct {
-	repo AreasRepository
+	repo     AreasRepository
+	embedder interface{ ProcessArea(uint) error }
 }
 
-func NewService(repo AreasRepository) AreasService {
-	return &service{repo: repo}
+func NewService(repo AreasRepository, embedder interface{ ProcessArea(uint) error }) AreasService {
+	return &service{repo: repo, embedder: embedder}
 }
 
 func (s *service) GetAll() ([]Area, error) {
@@ -25,11 +28,27 @@ func (s *service) GetByID(id int) (Area, error) {
 }
 
 func (s *service) Create(area Area) (uint, error) {
-	return s.repo.Create(area)
+	id, err := s.repo.Create(area)
+	if err == nil {
+		s.processEmbedding(id)
+	}
+	return id, err
 }
 
 func (s *service) Update(id int, area Area) error {
-	return s.repo.Update(id, area)
+	err := s.repo.Update(id, area)
+	if err == nil {
+		s.processEmbedding(uint(id))
+	}
+	return err
+}
+
+func (s *service) processEmbedding(id uint) {
+	if s.embedder != nil {
+		if err := s.embedder.ProcessArea(id); err != nil {
+			log.Printf("area %d embedding pending: %v", id, err)
+		}
+	}
 }
 
 func (s *service) DeleteByID(id int) error {
