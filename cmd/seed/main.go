@@ -117,7 +117,7 @@ func seedDemoRecords(db *gorm.DB) error {
 		if err := db.Model(&account).Update("role", "professor").Error; err != nil {
 			return fmt.Errorf("professor role %s: %w", spec.email, err)
 		}
-		profile := teacher.Professor{ID: account.ID, Siape: spec.siape, Is_active: true}
+		profile := teacher.Professor{ID: account.ID, Siape: fmt.Sprint(spec.siape), Is_active: true}
 		if err := db.Where("id = ?", account.ID).FirstOrCreate(&profile).Error; err != nil {
 			return fmt.Errorf("professor profile %s: %w", spec.email, err)
 		}

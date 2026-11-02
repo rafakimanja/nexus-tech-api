@@ -1,11 +1,13 @@
 package applicant
 
 import (
+	"errors"
 	"log"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type ApplicantHandler struct {
@@ -23,7 +25,11 @@ func (h *ApplicantHandler) GetApplicants(c *gin.Context) {
 		h.respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, applicants)
+	dtos := make([]DemandanteDTO, 0, len(applicants))
+	for _, a := range applicants {
+		dtos = append(dtos, a.NewDTO())
+	}
+	c.JSON(http.StatusOK, dtos)
 }
 
 func (h *ApplicantHandler) GetApplicantByID(c *gin.Context) {
@@ -35,10 +41,14 @@ func (h *ApplicantHandler) GetApplicantByID(c *gin.Context) {
 
 	applicant, err := h.service.GetByID(id)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			h.respondError(c, http.StatusNotFound, "applicant not found")
+			return
+		}
 		h.respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, applicant)
+	c.JSON(http.StatusOK, applicant.NewDTO())
 }
 
 func (h *ApplicantHandler) CreateApplicant(c *gin.Context) {

@@ -1,10 +1,12 @@
 package server
 
 import (
+	"api/internal/access"
 	"api/internal/domain/applicant"
 	"api/internal/domain/areas"
 	"api/internal/domain/areas_teacher"
 	"api/internal/domain/demand"
+	"api/internal/domain/profile"
 	"api/internal/domain/recommendation"
 	"api/internal/domain/session"
 	"api/internal/domain/teacher"
@@ -39,6 +41,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 	userRoutes := user.NewRouter(s.userHandler)
 	usersGroup := r.Group("/users")
 	usersGroup.Use(s.AuthMiddleware())
+	usersGroup.Use(access.Admin())
 	userRoutes.RegisterRoutes(usersGroup)
 
 	demandRoutes := demand.NewRouter(s.demandHandler)
@@ -50,6 +53,9 @@ func (s *Server) RegisterRoutes() http.Handler {
 	applicantsGroup := r.Group("/applicants")
 	applicantsGroup.Use(s.AuthMiddleware())
 	applicantRoutes.RegisterRoutes(applicantsGroup)
+	profileHandler := profile.NewHandler(profile.NewService(profile.NewRepository(s.db.DB())), s.logger)
+	applicantsGroup.POST("/", profileHandler.SaveApplicant)
+	applicantsGroup.PUT("/:id", profileHandler.SaveApplicant)
 
 	areasRoutes := areas.NewRouter(s.areasHandler)
 	areasGroup := r.Group("/areas")
@@ -65,6 +71,9 @@ func (s *Server) RegisterRoutes() http.Handler {
 	teachersGroup := r.Group("/teachers")
 	teachersGroup.Use(s.AuthMiddleware())
 	teacherRoutes.RegisterRoutes(teachersGroup)
+	teachersGroup.POST("/", profileHandler.SaveTeacher)
+	teachersGroup.PUT("/:id", profileHandler.SaveTeacher)
+	teachersGroup.PUT("/:id/areas", s.areasTeacherHandler.ReplaceByProfessorID)
 	teachersGroup.GET("/:id/recommendations", recommendation.NewHandler(s.db.DB()).Get)
 
 	return r

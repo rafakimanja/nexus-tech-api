@@ -43,8 +43,8 @@ O papel é definido pelo servidor usando as regras existentes de criação de us
 Enviar `Authorization: Bearer JWT`. Retorna `{"user": {...}}` com o mesmo DTO do login e estado atualizado no banco.
 
 - Admin: cadastro considerado completo.
-- Professor: completo se há perfil com SIAPE; um perfil existente inativo é bloqueado (`professor_inactive`).
-- Demandante: completo se há perfil com telefone, tipo, CPF/CNPJ e endereço; três ou mais strikes bloqueiam a sessão (`strike_limit`).
+- Professor: completo se há nome, perfil com SIAPE de sete dígitos e áreas dos dois tipos; um perfil existente inativo é bloqueado (`professor_inactive`).
+- Demandante: completo se há nome e perfil com telefone, tipo válido, CPF/CNPJ e endereço; três ou mais strikes bloqueiam a sessão (`strike_limit`).
 - Perfil ainda inexistente: cadastro incompleto, permitindo seu preenchimento.
 - Papel desconhecido: bloqueado (`invalid_role`).
 

@@ -1,12 +1,14 @@
 package teacher
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type TeacherHandler struct {
@@ -41,6 +43,10 @@ func (h *TeacherHandler) GetTeacherByID(c *gin.Context) {
 
 	professor, err := h.service.GetByID(id)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			h.respondError(c, http.StatusNotFound, "professor not found")
+			return
+		}
 		h.respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}

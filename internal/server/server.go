@@ -84,7 +84,9 @@ func NewServer(
 	NewServer.db.DB().AutoMigrate(&areas.Area{})
 	areaRelationsReady := migrateProfessorAreas(NewServer.db.DB())
 	NewServer.db.DB().AutoMigrate(&areas_teacher.ProfessorArea{})
-	NewServer.db.DB().AutoMigrate(&teacher.Professor{})
+	if err := NewServer.db.DB().AutoMigrate(&teacher.Professor{}); err != nil {
+		log.Fatalf("could not migrate professor profile: %v", err)
+	}
 	NewServer.db.DB().AutoMigrate(&applicant.Demandante{})
 	if err := NewServer.db.DB().AutoMigrate(&demand.Demanda{}); err != nil {
 		log.Fatalf("could not migrate demands: %v", err)

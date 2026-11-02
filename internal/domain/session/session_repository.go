@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	"api/internal/domain/applicant"
+	"api/internal/domain/areas_teacher"
+	"api/internal/domain/profile"
 	"api/internal/domain/teacher"
 	"api/internal/domain/uauth"
 	"api/internal/domain/user"
@@ -91,7 +93,15 @@ func (r *repository) Current(ctx context.Context, id uint) (Profile, error) {
 		if err != nil {
 			return p, err
 		}
-		p.ProfileComplete = teacher.Siape != 0
+		var associations []areas_teacher.ProfessorArea
+		if err := db.Where("professor_id = ?", id).Find(&associations).Error; err != nil {
+			return p, err
+		}
+		inputs := make([]areas_teacher.AssociationInput, 0, len(associations))
+		for _, a := range associations {
+			inputs = append(inputs, areas_teacher.AssociationInput{AreasID: a.AreasID, Type: a.Type})
+		}
+		p.ProfileComplete = strings.TrimSpace(account.Name) != "" && profile.ValidSiape(teacher.Siape) && profile.HasBothAreas(inputs)
 		p.Blocked = !teacher.Is_active
 		if p.Blocked {
 			p.BlockReason = "professor_inactive"
@@ -105,7 +115,7 @@ func (r *repository) Current(ctx context.Context, id uint) (Profile, error) {
 		if err != nil {
 			return p, err
 		}
-		p.ProfileComplete = strings.TrimSpace(applicant.Phone) != "" && strings.TrimSpace(applicant.Type) != "" && strings.TrimSpace(applicant.CpfCnpj) != "" && strings.TrimSpace(applicant.Adress) != ""
+		p.ProfileComplete = strings.TrimSpace(account.Name) != "" && profile.ValidApplicantFields(applicant.Phone, applicant.Type, applicant.CpfCnpj, applicant.Adress)
 		p.Blocked = applicant.Strikes >= 3
 		if p.Blocked {
 			p.BlockReason = "strike_limit"
