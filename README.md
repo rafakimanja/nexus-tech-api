@@ -2,6 +2,9 @@
 
 API em Go para autenticação, perfis, áreas e demandas do Nexus Tech.
 
+**[Documentação completa da API](docs/README.md)**: configuração, arquitetura,
+fluxos, referência de rotas, contratos e testes.
+
 ## Getting Started
 
 O contrato de login, sessão de 12 horas e consulta `GET /me` está em
