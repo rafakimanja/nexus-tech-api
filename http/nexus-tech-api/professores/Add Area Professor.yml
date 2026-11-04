@@ -1,21 +1,23 @@
 info:
-  name: Add Area Professor
+  name: Substituir Areas Professor
   type: http
   seq: 3
 
 http:
   method: PUT
-  url: "{{url}}/teachers/2/areas"
+  url: "{{url}}/teachers/{{professor_id}}/areas"
   body:
     type: json
     data: |-
       {
-         "areas_id": 3,
-         "type": "interesse"
-       }
+        "areas": [
+          {"areas_id": 1, "type": "técnica"},
+          {"areas_id": 2, "type": "interesse"}
+        ]
+      }
   auth:
     type: bearer
-    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3OTI1MTA4NTUsImlkIjoxLCJyb2xlIjoiYWRtaW4ifQ.4idPf4aa0lTRRqv2aQj_fdbVg21mgEO-aPQJAZm9UQs
+    token: "{{access_token}}"
 
 settings:
   encodeUrl: true

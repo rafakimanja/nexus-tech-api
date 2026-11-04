@@ -5,8 +5,6 @@ all: build test
 
 build:
 	@echo "Building..."
-	
-	
 	@go build -o main cmd/api/main.go
 
 # Run the application
@@ -44,7 +42,7 @@ test:
 # Integrations Tests for the application
 itest:
 	@echo "Running integration tests..."
-	@go test ./internal/database -v
+	@go test ./internal/domain/... -run Postgres -count=1 -v
 
 # Clean the binary
 clean:

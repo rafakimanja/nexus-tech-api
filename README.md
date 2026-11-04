@@ -1,6 +1,6 @@
-# Project api
+# Nexus Tech API
 
-One Paragraph of project description goes here
+API em Go para autenticação, perfis, áreas e demandas do Nexus Tech.
 
 ## Getting Started
 
@@ -9,7 +9,7 @@ O contrato de login, sessão de 12 horas e consulta `GET /me` está em
 
 Cadastro, edição e permissões de perfis estão em [docs/perfis.md](docs/perfis.md).
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
+Contratos e ciclo de vida de demandas estão em [docs/demandas.md](docs/demandas.md).
 
 ## MakeFile
 
@@ -33,8 +33,8 @@ environment variables as the API, loaded from `.env` or the shell):
 ```bash
 make seed
 ```
-This creates/updates the schema and inserts development areas plus one sample
-demandante and professor. It is safe to run more than once. To run directly:
+This creates/updates the schema and inserts sample areas, applicants, teachers
+and demands. It is safe to run more than once. To run directly:
 ```bash
 go run ./cmd/seed
 ```
@@ -75,7 +75,8 @@ Shutdown DB Container
 make docker-down
 ```
 
-DB Integrations Test:
+Testes de integração requerem `TEST_DATABASE_URL` apontando para um PostgreSQL
+exclusivo de testes, com pgvector habilitado. Sem essa variável, são ignorados:
 ```bash
 make itest
 ```

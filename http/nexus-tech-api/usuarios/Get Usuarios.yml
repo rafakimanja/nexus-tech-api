@@ -8,7 +8,7 @@ http:
   url: "{{url}}/users"
   auth:
     type: bearer
-    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3OTE3NTU2NTgsImlkIjoxLCJyb2xlIjoiIn0.1yuHKsukK8Jlyv1koTSDxtP1OdkE_dkAaWCzt6T66J0
+    token: "{{access_token}}"
 
 settings:
   encodeUrl: true

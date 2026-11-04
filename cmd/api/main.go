@@ -16,7 +16,6 @@ import (
 	"api/internal/domain/areas_teacher"
 	"api/internal/domain/demand"
 	"api/internal/domain/teacher"
-	"api/internal/domain/uauth"
 	"api/internal/domain/user"
 	"api/internal/embedding"
 	"api/internal/server"
@@ -59,9 +58,6 @@ func main() {
 	userService := user.NewService(userRepository)
 	userHandler := user.NewHandler(userService, logger)
 
-	userAuthRepository := uauth.NewRepository(db.DB())
-	userAuthService := uauth.NewService(userAuthRepository)
-
 	demandRepository := demand.NewRepository(db.DB())
 	demandService := demand.NewService(demandRepository, embedder)
 	demandHandler := demand.NewHandler(demandService, logger)
@@ -79,7 +75,7 @@ func main() {
 	areasTeacherHandler := areas_teacher.NewHandler(areasTeacherService, logger)
 
 	teacherRepository := teacher.NewRepository(db.DB())
-	teacherService := teacher.NewService(teacherRepository, userRepository, areasTeacherService)
+	teacherService := teacher.NewService(teacherRepository)
 	teacherHandler := teacher.NewHandler(teacherService, logger)
 
 	if err := auth.NewAuth(); err != nil {
@@ -89,17 +85,11 @@ func main() {
 	server := server.NewServer(
 		db,
 		logger,
-		userService,
 		userHandler,
-		userAuthService,
-		demandService,
 		demandHandler,
-		applicantService,
 		applicantHandler,
-		areasService,
 		areasHandler,
 		areasTeacherHandler,
-		teacherService,
 		teacherHandler,
 	)
 

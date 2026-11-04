@@ -5,9 +5,6 @@ import "gorm.io/gorm"
 type ApplicantRepository interface {
 	FindByID(id int) (Demandante, error)
 	FindAll() ([]Demandante, error)
-	Create(applicant Demandante) (uint, error)
-	Update(id int, applicant Demandante) error
-	Delete(id int) error
 }
 
 type repository struct {
@@ -28,25 +25,4 @@ func (r *repository) FindAll() ([]Demandante, error) {
 	var applicants []Demandante
 	err := r.db.Preload("User").Find(&applicants).Error
 	return applicants, err
-}
-
-func (r *repository) Create(applicant Demandante) (uint, error) {
-	err := r.db.Create(&applicant).Error
-	return applicant.ID, err
-}
-
-func (r *repository) Update(id int, applicant Demandante) error {
-	var existing Demandante
-	if err := r.db.First(&existing, id).Error; err != nil {
-		return err
-	}
-
-	applicant.ID = existing.ID
-	return r.db.Model(&existing).
-		Select("Phone", "Type", "CpfCnpj", "Adress", "Strikes").
-		Updates(&applicant).Error
-}
-
-func (r *repository) Delete(id int) error {
-	return r.db.Delete(&Demandante{}, id).Error
 }

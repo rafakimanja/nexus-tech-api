@@ -25,18 +25,11 @@ import (
 
 type Server struct {
 	sessionService      *session.Service
-	port                int
-	userService         user.UserService
 	userHandler         *user.UserHandler
-	userAuthService     uauth.UAuthService
-	demandService       demand.DemandaService
 	demandHandler       *demand.DemandaHandler
-	applicantService    applicant.ApplicantService
 	applicantHandler    *applicant.ApplicantHandler
-	areasService        areas.AreasService
 	areasHandler        *areas.AreasHandler
 	areasTeacherHandler *areas_teacher.AreasTeacherHandler
-	teacherService      teacher.TeacherService
 	teacherHandler      *teacher.TeacherHandler
 	db                  database.Service
 	logger              *log.Logger
@@ -45,36 +38,23 @@ type Server struct {
 func NewServer(
 	db database.Service,
 	logger *log.Logger,
-	userService user.UserService,
 	userHandler *user.UserHandler,
-	userAuthService uauth.UAuthService,
-	demandService demand.DemandaService,
 	demandHandler *demand.DemandaHandler,
-	applicantService applicant.ApplicantService,
 	applicantHandler *applicant.ApplicantHandler,
-	areasService areas.AreasService,
 	areasHandler *areas.AreasHandler,
 	areasTeacherHandler *areas_teacher.AreasTeacherHandler,
-	teacherService teacher.TeacherService,
 	teacherHandler *teacher.TeacherHandler,
 ) *http.Server {
 	port, _ := strconv.Atoi(os.Getenv("PORT"))
 	NewServer := &Server{
 		sessionService:      session.NewService(session.NewRepository(db.DB()), os.Getenv("GOOGLE_CLIENT_ID"), idtoken.Validate),
-		port:                port,
 		db:                  db,
 		logger:              logger,
-		userService:         userService,
 		userHandler:         userHandler,
-		userAuthService:     userAuthService,
-		demandService:       demandService,
 		demandHandler:       demandHandler,
-		applicantService:    applicantService,
 		applicantHandler:    applicantHandler,
-		areasService:        areasService,
 		areasHandler:        areasHandler,
 		areasTeacherHandler: areasTeacherHandler,
-		teacherService:      teacherService,
 		teacherHandler:      teacherHandler,
 	}
 
@@ -109,7 +89,7 @@ func NewServer(
 
 	// Declare Server config
 	server := &http.Server{
-		Addr:         fmt.Sprintf(":%d", NewServer.port),
+		Addr:         fmt.Sprintf(":%d", port),
 		Handler:      NewServer.RegisterRoutes(),
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  10 * time.Second,

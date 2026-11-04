@@ -8,7 +8,7 @@ http:
   url: "{{url}}/teachers"
   auth:
     type: bearer
-    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3OTE3NTY2NjMsImlkIjoyLCJyb2xlIjoicHJvZmVzc29yIn0.j9um6pebZzqkJhcKU_86GOTW-Ca-rTKIt6MDTMMH4cc
+    token: "{{access_token}}"
 
 settings:
   encodeUrl: true
