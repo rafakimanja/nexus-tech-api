@@ -103,7 +103,13 @@ func main() {
 		teacherHandler,
 	)
 
-	// Create a done channel to signal when the shutdown is complete
+	// Expiration runs only after schema initialization and stops with the API.
+	expiryCtx, stopExpiry := context.WithCancel(context.Background())
+	defer stopExpiry()
+	server.RegisterOnShutdown(stopExpiry)
+	go demand.RunExpiry(expiryCtx, demandService, logger)
+
+	// Create a done channel to signal when the shutdown is complete.
 	done := make(chan bool, 1)
 
 	// Run graceful shutdown in a separate goroutine

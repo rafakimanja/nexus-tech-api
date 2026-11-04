@@ -5,6 +5,7 @@ import (
 	"api/internal/domain/areas"
 	"api/internal/domain/teacher"
 	"fmt"
+	"time"
 
 	"github.com/pgvector/pgvector-go"
 	"gorm.io/gorm"
@@ -12,15 +13,23 @@ import (
 
 type Demanda struct {
 	gorm.Model
-	DemandanteID    uint `gorm:"not null"`
-	ProfessorID     *uint
-	AreaID          uint             `gorm:"not null"`
-	Title           string           `gorm:"not null"`
-	Description     string           `gorm:"not null"`
-	Status          string           `gorm:"not null"`
-	IsCancelled     bool             `gorm:"not null"`
-	Embedding       *pgvector.Vector `gorm:"type:vector(1024)"`
-	ReasonCancelled string
+	DemandanteID       uint `gorm:"not null"`
+	ProfessorID        *uint
+	AreaID             *uint
+	Title              string           `gorm:"not null"`
+	Description        string           `gorm:"not null"`
+	PublicoAlvo        string           `gorm:"not null;default:''"`
+	Impacto            string           `gorm:"not null;default:''"`
+	Status             string           `gorm:"not null"`
+	IsCancelled        bool             `gorm:"not null"`
+	Embedding          *pgvector.Vector `gorm:"type:vector(1024)"`
+	ReasonCancelled    string
+	AnaliseIniciadaEm  *time.Time
+	AnaliseExpiraEm    *time.Time `gorm:"index"`
+	ProducaoIniciadaEm *time.Time
+	ConcluidaEm        *time.Time
+	CanceladoEm        *time.Time
+	DescricaoSolucao   *string
 
 	Professor  teacher.Professor    `gorm:"foreignKey:ProfessorID;references:ID"`
 	Demandante applicant.Demandante `gorm:"foreignKey:DemandanteID;references:ID"`

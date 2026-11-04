@@ -1,124 +1,81 @@
-# Pendências para integração da API com o aplicativo
+# Pendências mínimas da API para integração com o aplicativo
 
-Atualizado em 02/11/2026. Base: `GUIA_AGENTES_MIGRACAO.md`, auditoria anterior e
-conferência do código atual da API e das dependências Firebase do aplicativo.
-Esta lista contém somente trabalho restante. Cada etapa deve ser revisada com
-o responsável pelo produto antes da implementação. A ordem abaixo é sugerida;
-não representa aprovação de todo o escopo para o MVP.
+Atualizado em 04/11/2026. Esta lista considera um uso básico: autenticar com
+Google, completar o perfil, consultar áreas e permitir que um demandante
+publique e acompanhe uma demanda e que um professor a assuma e conclua.
+Os itens de demandas foram confrontados com o modelo `demanda.dart` do app.
+Considera-se que o aplicativo será adaptado para IDs numéricos; esta análise
+não confirma que ele já consome os contratos da API.
 
-## 1. Demandas e ciclo de vida — próxima etapa sugerida
+Login, sessão, perfis, áreas e CRUD de demandas já possuem rotas na API. Os
+itens abaixo registram a implementação e o trabalho restante na API para esse
+fluxo, incluindo sua configuração e validação.
 
-- [ ] Comparar campo a campo com o Flutter e acrescentar público-alvo, impacto, datas de análise/produção/conclusão, descrição da solução e vínculo de republicação.
-- [ ] Definir se a área explícita da demanda será obrigatória: a API exige `AreaID`, mas o modelo/formulário do aplicativo precisa ser reconciliado com esse requisito.
-- [ ] Padronizar o CRUD e os dados legados com os estados `cadastrada`, `emAnalise`, `emProducao`, `concluida` e `cancelada`.
-- [ ] Criar DTOs de entrada e saída de demandas, com campos editáveis limitados, identificação do demandante pelo usuário autenticado e datas críticas geradas no servidor.
-- [ ] Aplicar autorização por papel, propriedade e estado nas consultas, alterações e ações das demandas.
-- [ ] Implementar ações de marcar para análise, devolver, assumir e concluir, com transições válidas e timestamps.
-- [ ] Restringir edição e cancelamento pelo demandante ao estado `cadastrada`; preservar motivo e histórico no cancelamento.
-- [ ] Implementar republicação como nova demanda, mantendo vínculo histórico e impedindo republicação duplicada.
-- [ ] Proteger ações concorrentes com transações e locks ou atualizações condicionais.
-- [ ] Confirmar e implementar expiração de análise em 24 horas por job idempotente no servidor, incluindo recuperação após indisponibilidade.
-- [ ] Implementar listas por papel, filtros acumulativos, pesquisa, ordenação e paginação.
-- [ ] Definir os efeitos de cada transição sobre chats, notificações e auditoria; implementar esses efeitos junto aos respectivos módulos.
+## 1. Demandas — implementado
 
-## 2. Áreas, contratos e permissões restantes
+Contratos e decisões estão em [demandas.md](demandas.md). Área opcional, com
+IDs existentes preservados; edição sem área não desfaz o vínculo. Testes
+unitários e HTTP executados. A validação com PostgreSQL real permanece
+pendente: o teste foi criado, mas exige `TEST_DATABASE_URL` configurada.
 
-- [ ] Normalizar nomes de áreas e estabelecer unicidade e comportamento para criação concorrente de áreas equivalentes.
-- [ ] Definir e aplicar permissões para criar, renomear e excluir áreas, considerando os vínculos existentes.
-- [ ] Revisar entradas ainda vinculadas diretamente aos modelos GORM, especialmente demandas, áreas e criação administrativa de usuários.
-- [ ] Padronizar respostas de erro restantes: evitar detalhes internos e distinguir entrada inválida, ausência, conflito e falha interna.
-- [ ] Consolidar OpenAPI versionado com exemplos e os contratos de IDs, enums, datas, paginação e erros.
-- [ ] Completar a matriz de permissões dos recursos ainda não protegidos e dos novos módulos.
-- [ ] Substituir a atribuição de administrador por e-mail fixo no código por um processo/configuração controlado; revisar elegibilidade institucional de professores.
-- [ ] Definir o procedimento de vinculação controlada para contas legadas que recebem 409 no login.
-- [ ] Revisar necessidade de validações adicionais de telefone e CPF/CNPJ, hoje limitadas ao preenchimento no cadastro da API.
-- [ ] Remover ou adaptar handlers e serviços antigos de mutação de perfis que ficaram sem rota, para evitar reintroduzir contratos inseguros no futuro.
+- [x] Acrescentar `publicoAlvo` e `impacto` ao modelo e aos contratos de
+  criação, edição e leitura, com preenchimento obrigatório nas entradas.
+- [x] Tornar `AreaID` opcional, validar a área quando informada e preservar
+  os vínculos existentes quando o aplicativo editar sem enviar esse campo.
+- [x] Criar contratos de entrada e saída para demandas, validar os dados e
+  identificar o demandante pelo usuário autenticado, sem aceitar do cliente
+  campos internos ou que ele não possa alterar. Retornar título, descrição,
+  dados do demandante (ID, nome e tipo) e do professor (ID e nome, quando
+  atribuído), estado e datas. Os nomes estão associados aos usuários dos
+  perfis e precisam ser carregados ou consultados para compor a resposta.
+- [x] Aplicar autorização por papel e propriedade nas consultas e alterações:
+  o demandante gerencia suas demandas e o professor acessa a prateleira e as
+  demandas atribuídas a ele. A prateleira do modelo do app inclui demandas
+  `cadastrada` e `emProducao`.
+- [x] Validar os estados `cadastrada`, `emAnalise`, `emProducao`, `concluida`
+  e `cancelada`. Implementar as transições do app: `cadastrada` para
+  `emAnalise` ou `cancelada`; `emAnalise` para `emProducao` ou `cadastrada`;
+  `emProducao` para `concluida`. Os dois últimos estados são terminais.
+- [x] Implementar marcação para análise, devolução, atribuição e conclusão
+  pelo professor autorizado. Registrar no servidor início e prazo da análise,
+  início da produção, conclusão e descrição da solução. Garantir transições
+  atômicas para impedir que dois professores reservem a mesma demanda.
+- [x] Fazer a análise expirar após 24 horas e devolver a demanda à prateleira,
+  liberando a atribuição de forma segura mesmo após indisponibilidade da API.
+- [x] Permitir edição e cancelamento pelo demandante apenas em `cadastrada`;
+  preservar motivo, data e histórico do cancelamento. Conciliar `Status` e
+  `IsCancelled` para evitar estados contraditórios, sem tratar exclusão lógica
+  do GORM como equivalente ao cancelamento.
+- [x] Disponibilizar consultas para o demandante acompanhar suas demandas e
+  para o professor listar a prateleira e as atribuídas a ele.
+- [x] Retornar erros adequados para dados inválidos, recurso inexistente,
+  acesso negado e conflitos, sem expor detalhes internos.
 
-## 3. Administração, denúncias e auditoria
+## 2. Configuração e contratos
 
-- [ ] Criar visão geral administrativa com indicadores e critérios de cálculo acordados com o aplicativo.
-- [ ] Implementar registro de denúncias, proteção contra duplicação e acesso restrito aos envolvidos/autorizados.
-- [ ] Implementar fila de denúncias, contador, filtros e detalhes.
-- [ ] Implementar julgamento e parecer administrativo, impedindo julgamento duplo.
-- [ ] Aplicar advertências e suspensão decorrentes do julgamento de forma transacional.
-- [ ] Modelar o estado administrativo de banimento, data e motivo, preservando a regra do aplicativo de reversão somente pelo administrador.
-- [ ] Implementar reversão administrativa de banimento e gestão de strikes com justificativa.
-- [ ] Implementar ativação/desativação de professor pelo administrador, com data e motivo.
-- [ ] Implementar métricas por professor conforme as definições do aplicativo.
-- [ ] Completar gestão administrativa de demandantes além das consultas existentes.
-- [ ] Registrar trilha de auditoria com ator, ação, alvo, data e justificativa para operações administrativas e eventos relevantes.
+- [ ] Preparar uma configuração reproduzível do PostgreSQL com pgvector para
+  iniciar a API; a imagem atual do Docker usa `postgres:latest`, enquanto o
+  esquema exige a extensão. Documentar as variáveis e os passos necessários,
+  sem incluir segredos.
+- [ ] Documentar os contratos usados no fluxo básico, incluindo campos, IDs,
+  estados e erros de demandas, em complemento à documentação existente de
+  autenticação e perfis.
+- [ ] Configurar as origens CORS por ambiente se o aplicativo for executado
+  na Web; a configuração atual aceita apenas `http://localhost:5173`.
 
-## 4. Chat e notificações
+## 3. Validação
 
-- [ ] Criar conversas vinculadas às demandas, participantes e mensagens.
-- [ ] Implementar autorização por participante, paginação/ordenação de mensagens, contadores e marcação de leitura.
-- [ ] Implementar encerramento de conversa e mensagens de sistema conforme as transições da demanda.
-- [ ] Tratar envios duplicados e concorrência.
-- [ ] Persistir notificações por destinatário, geradas por eventos do servidor.
-- [ ] Implementar listagem, contador de não lidas e leitura individual/em lote.
-- [ ] Garantir consistência entre eventos de domínio e seus efeitos; definir retentativa/outbox quando houver efeitos externos.
-- [ ] Definir atualização por polling, SSE ou WebSocket, incluindo reconexão e recuperação de eventos.
+- [ ] Executar os testes de integração existentes de identidade e perfis com
+  PostgreSQL de teste e validar o login Google real com a configuração usada
+  pelo aplicativo.
+- [ ] Testar o fluxo básico de ponta a ponta na API: login, preenchimento de
+  perfil, consulta de áreas, criação e consulta de demanda, análise, devolução
+  ou atribuição e conclusão, edição e cancelamento quando permitidos.
+- [ ] Testar acessos negados, dados inválidos e atribuições simultâneas da
+  mesma demanda, transições e expiração da análise, além de confirmar que uma
+  falha na geração de embeddings não impede o cadastro ou a edição da demanda.
 
-## 5. Fotos e anexos
-
-- [ ] Escolher armazenamento de objetos e política de persistência, retenção e recuperação.
-- [ ] Implementar upload e metadados de fotos e anexos vinculados ao usuário ou à demanda.
-- [ ] Confirmar limites/tipos do aplicativo e validar tamanho e conteúdo no servidor.
-- [ ] Implementar download autorizado e definir uso de URLs temporárias ou proxy autenticado.
-- [ ] Tratar falhas entre banco e armazenamento, exclusão e limpeza de objetos órfãos.
-
-## 6. Integração no Flutter
-
-- [ ] Criar cliente HTTP por ambiente, tratamento de erros e armazenamento seguro do JWT.
-- [ ] Adaptar Google Sign-In para enviar o ID token à API com audiência correta por plataforma.
-- [ ] Substituir o estado FirebaseAuth pela sessão da API, consumindo `/me`, expiração de 12 horas, nova autenticação e logout local.
-- [ ] Adaptar telas de cadastro incompleto, bloqueio e conflito de vinculação de conta.
-- [ ] Adaptar modelos e parsers aos DTOs, incluindo IDs numéricos, `admin`/`administrador`, campos de perfil e SIAPE textual.
-- [ ] Integrar cadastro/edição de perfis e mapear áreas selecionadas para os IDs da API.
-- [ ] Consumir recomendações na tela do professor e integrar sua ordenação/destaque à experiência do Kanban.
-- [ ] Substituir o repositório Firebase de demandas e integrar formulários, filtros, detalhes e ações aos contratos aprovados.
-- [ ] Substituir repositórios de chat, notificações, denúncias, administração, fotos e anexos conforme os módulos da API forem entregues.
-- [ ] Adaptar atualização das telas, reconexão, conflitos e comportamento offline acordado.
-- [ ] Remover dependências e inicialização Firebase somente após migrar e validar os fluxos que as utilizam.
-
-## 7. Banco, configuração e operação
-
-- [ ] Substituir migrações automáticas/destrutivas na inicialização por migrações versionadas, com tratamento de falhas e procedimento de recuperação.
-- [ ] Validar evolução do esquema existente, incluindo SIAPE textual, vínculos únicos Google e professor opcional nas demandas.
-- [ ] Ajustar o ambiente Docker para uma versão fixa de PostgreSQL compatível com pgvector e preparar a extensão de forma reproduzível.
-- [ ] Tornar origens CORS e callback Google configuráveis por ambiente.
-- [ ] Completar documentação de configuração e execução por ambiente sem expor segredos.
-- [ ] Preparar TLS, logs operacionais, monitoramento, backups e ensaio de restauração.
-- [ ] Definir e testar execução operacional dos jobs e do reprocessamento manual de embeddings pendentes.
-
-## 8. Migração dos dados existentes — condicionada à necessidade de preservação
-
-- [ ] Confirmar quais dados/contas Firebase precisam ser preservados e os volumes envolvidos.
-- [ ] Inventariar coleções, subcoleções, identidades e objetos, incluindo configurações externas ou Cloud Functions ainda não mapeadas.
-- [ ] Definir mapeamento de Firebase UID/document ID/Google subject para IDs PostgreSQL, com tratamento de contas ambíguas e referências quebradas.
-- [ ] Implementar importação idempotente de usuários, perfis, áreas, demandas, histórico, chats, mensagens, notificações, denúncias e auditoria.
-- [ ] Migrar objetos e metadados de arquivos com verificação de integridade e permissões.
-- [ ] Regularizar enums legados, duplicidades de identidade e dados de perfil incompatíveis com o contrato atual.
-- [ ] Ensaiar migração isolada, reconciliar contagens e relacionamentos e definir corte, janela de indisponibilidade e rollback.
-- [ ] Validar dados e fluxos antes de desligar Firebase.
-
-## 9. Validação ainda pendente
-
-- [ ] Configurar PostgreSQL de teste e executar os testes de integração existentes de recomendações, identidades e perfis; eles ainda não foram executados neste ambiente.
-- [ ] Testar migrações a partir de um esquema anterior, sem depender apenas de banco vazio.
-- [ ] Cobrir concorrência real de login, substituição de áreas, ações de demanda e julgamento administrativo.
-- [ ] Validar login Google real e sessão por plataforma suportada.
-- [ ] Validar geração e regeneração de embeddings com Ollama real, falhas e reprocessamento.
-- [ ] Avaliar a qualidade do ranking com demandas e áreas representativas; ajustar pesos somente se os resultados justificarem.
-- [ ] Executar `flutter analyze`, `flutter test` e testes de contrato dos repositórios HTTP após a adaptação do app.
-- [ ] Executar cenários completos de cadastro, demanda, cancelamento/republicação, chat, arquivos, denúncias e administração conforme os módulos forem migrados.
-- [ ] Testar isolamento entre usuários, contas bloqueadas, falhas de rede, reconexão e recuperação de dados.
-
-## 10. Decisões e melhorias futuras — fora do MVP imediato
-
-- [ ] Definir quais funcionalidades restantes são obrigatórias para a primeira entrega e quais podem ser adiadas.
-- [ ] Confirmar plataformas suportadas e exigências de funcionamento offline/tempo real.
-- [ ] Definir infraestrutura e retenção de arquivos e dados históricos.
-- [ ] Planejar notificações de novas demandas compatíveis com o perfil e regras de prioridade para professores.
-- [ ] Decidir se haverá push externo, além das notificações internas.
-- [ ] Avaliar automatização do reprocessamento de embeddings e índices vetoriais quando o volume e a operação justificarem.
+Chat, notificações, anexos, denúncias, administração avançada, recomendações,
+republicação e migração de dados não fazem parte deste recorte básico. Se a
+primeira entrega exigir algum desses fluxos ou preservar contas existentes,
+suas dependências na API precisarão ser avaliadas separadamente.

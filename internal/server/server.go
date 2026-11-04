@@ -94,6 +94,9 @@ func NewServer(
 	if err := NewServer.db.DB().Exec("ALTER TABLE demandas ALTER COLUMN professor_id DROP NOT NULL").Error; err != nil {
 		log.Fatalf("could not make demand professor optional: %v", err)
 	}
+	if err := NewServer.db.DB().Exec("ALTER TABLE demandas ALTER COLUMN area_id DROP NOT NULL").Error; err != nil {
+		log.Fatalf("could not make demand area optional: %v", err)
+	}
 	if areaRelationsReady {
 		migrator := NewServer.db.DB().Migrator()
 		if migrator.HasColumn("areas", "type") {

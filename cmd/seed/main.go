@@ -37,6 +37,9 @@ func main() {
 	if err := db.Exec("ALTER TABLE demandas ALTER COLUMN professor_id DROP NOT NULL").Error; err != nil {
 		log.Fatalf("could not make demand professor optional: %v", err)
 	}
+	if err := db.Exec("ALTER TABLE demandas ALTER COLUMN area_id DROP NOT NULL").Error; err != nil {
+		log.Fatalf("could not make demand area optional: %v", err)
+	}
 	// Older schema versions may have attached profile-to-user foreign keys to
 	// users instead of their profile tables. Those reversed constraints prevent
 	// creating users whose IDs do not already exist in the profile tables.
@@ -90,7 +93,7 @@ func seedDemoRecords(db *gorm.DB) error {
 			return fmt.Errorf("demandante role %s: %w", spec.email, err)
 		}
 		profile := applicant.Demandante{
-			ID: account.ID, Phone: spec.phone, Type: "Pessoa física",
+			ID: account.ID, Phone: spec.phone, Type: "pessoaFisica",
 			CpfCnpj: spec.cpf, Adress: spec.address, Strikes: 0,
 		}
 		if err := db.Where("id = ?", account.ID).FirstOrCreate(&profile).Error; err != nil {
@@ -158,12 +161,16 @@ func seedDemoRecords(db *gorm.DB) error {
 	}
 	for _, spec := range demandSpecs {
 		professorID := professors[spec.professor].ID
+		areaID := areaIDs[spec.area]
 		entry := demand.Demanda{
 			DemandanteID: requesters[spec.requester].ID,
-			ProfessorID:  &professorID,
-			AreaID:       areaIDs[spec.area],
+			AreaID:       &areaID,
 			Title:        spec.title, Description: spec.description,
-			Status: spec.status, IsCancelled: false,
+			PublicoAlvo: "Comunidade acadêmica", Impacto: "Melhorar os serviços da instituição",
+			Status: demand.Cadastrada, IsCancelled: false,
+		}
+		if spec.status == "Em andamento" {
+			entry.Status, entry.ProfessorID = demand.EmProducao, &professorID
 		}
 		if err := db.Where("title = ?", spec.title).FirstOrCreate(&entry).Error; err != nil {
 			return fmt.Errorf("demand %q: %w", spec.title, err)
