@@ -1,12 +1,13 @@
 package teacher
 
 import (
-	"fmt"
+	"errors"
 	"log"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type TeacherHandler struct {
@@ -41,87 +42,14 @@ func (h *TeacherHandler) GetTeacherByID(c *gin.Context) {
 
 	professor, err := h.service.GetByID(id)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			h.respondError(c, http.StatusNotFound, "professor not found")
+			return
+		}
 		h.respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 	c.JSON(http.StatusOK, professor.NewDTO())
-}
-
-func (h *TeacherHandler) CreateTeacher(c *gin.Context) {
-	var professor Professor
-	if err := c.ShouldBindJSON(&professor); err != nil {
-		fmt.Printf("JSON Professor recebido: %v\n", professor)
-		h.respondError(c, http.StatusBadRequest, "objeto 'Professor' invalido")
-		return
-	}
-
-	id, err := h.service.Create(professor)
-	if err != nil {
-		h.respondError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	if id == 0 {
-		h.respondError(c, http.StatusInternalServerError, "falha ao criar professor")
-		return
-	}
-	c.JSON(http.StatusCreated, gin.H{"teacherID": id})
-}
-
-func (h *TeacherHandler) UpdateTeacher(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		h.respondError(c, http.StatusBadRequest, "invalid ID")
-		return
-	}
-
-	var professor Professor
-	if err := c.ShouldBindJSON(&professor); err != nil {
-		h.respondError(c, http.StatusBadRequest, "objeto 'Professor' invalido")
-		return
-	}
-
-	if err := h.service.Update(id, professor); err != nil {
-		h.respondError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	c.Status(http.StatusNoContent)
-}
-
-func (h *TeacherHandler) UpdateAreasTeacher(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		h.respondError(c, http.StatusBadRequest, "invalid ID")
-		return
-	}
-
-	var request struct {
-		AreasID uint   `json:"areas_id"`
-		Type    string `json:"type"`
-	}
-	if err := c.ShouldBindJSON(&request); err != nil {
-		h.respondError(c, http.StatusBadRequest, "invalid object")
-		return
-	}
-
-	if err := h.service.UpdateAreas(id, request.AreasID, request.Type); err != nil {
-		h.respondError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	c.Status(http.StatusNoContent)
-}
-
-func (h *TeacherHandler) DeleteTeacher(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		h.respondError(c, http.StatusBadRequest, "invalid ID")
-		return
-	}
-
-	if err := h.service.DeleteByID(id); err != nil {
-		h.respondError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	c.Status(http.StatusNoContent)
 }
 
 func (h *TeacherHandler) respondError(c *gin.Context, status int, message string) {

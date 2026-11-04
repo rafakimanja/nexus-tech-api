@@ -13,27 +13,23 @@ import (
 	"api/internal/domain/areas"
 	"api/internal/domain/areas_teacher"
 	"api/internal/domain/demand"
+	"api/internal/domain/session"
 	"api/internal/domain/teacher"
 	"api/internal/domain/uauth"
 	"api/internal/domain/user"
 
 	_ "github.com/joho/godotenv/autoload"
+	"google.golang.org/api/idtoken"
 	"gorm.io/gorm"
 )
 
 type Server struct {
-	port                int
-	userService         user.UserService
+	sessionService      *session.Service
 	userHandler         *user.UserHandler
-	userAuthService     uauth.UAuthService
-	demandService       demand.DemandaService
 	demandHandler       *demand.DemandaHandler
-	applicantService    applicant.ApplicantService
 	applicantHandler    *applicant.ApplicantHandler
-	areasService        areas.AreasService
 	areasHandler        *areas.AreasHandler
 	areasTeacherHandler *areas_teacher.AreasTeacherHandler
-	teacherService      teacher.TeacherService
 	teacherHandler      *teacher.TeacherHandler
 	db                  database.Service
 	logger              *log.Logger
@@ -42,46 +38,45 @@ type Server struct {
 func NewServer(
 	db database.Service,
 	logger *log.Logger,
-	userService user.UserService,
 	userHandler *user.UserHandler,
-	userAuthService uauth.UAuthService,
-	demandService demand.DemandaService,
 	demandHandler *demand.DemandaHandler,
-	applicantService applicant.ApplicantService,
 	applicantHandler *applicant.ApplicantHandler,
-	areasService areas.AreasService,
 	areasHandler *areas.AreasHandler,
 	areasTeacherHandler *areas_teacher.AreasTeacherHandler,
-	teacherService teacher.TeacherService,
 	teacherHandler *teacher.TeacherHandler,
 ) *http.Server {
 	port, _ := strconv.Atoi(os.Getenv("PORT"))
 	NewServer := &Server{
-		port:                port,
+		sessionService:      session.NewService(session.NewRepository(db.DB()), os.Getenv("GOOGLE_CLIENT_ID"), idtoken.Validate),
 		db:                  db,
 		logger:              logger,
-		userService:         userService,
 		userHandler:         userHandler,
-		userAuthService:     userAuthService,
-		demandService:       demandService,
 		demandHandler:       demandHandler,
-		applicantService:    applicantService,
 		applicantHandler:    applicantHandler,
-		areasService:        areasService,
 		areasHandler:        areasHandler,
 		areasTeacherHandler: areasTeacherHandler,
-		teacherService:      teacherService,
 		teacherHandler:      teacherHandler,
 	}
 
-	NewServer.db.DB().AutoMigrate(&user.User{})
-	NewServer.db.DB().AutoMigrate(&uauth.UserAuth{})
+	if err := NewServer.db.DB().AutoMigrate(&user.User{}, &uauth.UserAuth{}); err != nil {
+		log.Fatalf("could not migrate identity schema: %v", err)
+	}
 	NewServer.db.DB().AutoMigrate(&areas.Area{})
 	areaRelationsReady := migrateProfessorAreas(NewServer.db.DB())
 	NewServer.db.DB().AutoMigrate(&areas_teacher.ProfessorArea{})
-	NewServer.db.DB().AutoMigrate(&teacher.Professor{})
+	if err := NewServer.db.DB().AutoMigrate(&teacher.Professor{}); err != nil {
+		log.Fatalf("could not migrate professor profile: %v", err)
+	}
 	NewServer.db.DB().AutoMigrate(&applicant.Demandante{})
-	NewServer.db.DB().AutoMigrate(&demand.Demanda{})
+	if err := NewServer.db.DB().AutoMigrate(&demand.Demanda{}); err != nil {
+		log.Fatalf("could not migrate demands: %v", err)
+	}
+	if err := NewServer.db.DB().Exec("ALTER TABLE demandas ALTER COLUMN professor_id DROP NOT NULL").Error; err != nil {
+		log.Fatalf("could not make demand professor optional: %v", err)
+	}
+	if err := NewServer.db.DB().Exec("ALTER TABLE demandas ALTER COLUMN area_id DROP NOT NULL").Error; err != nil {
+		log.Fatalf("could not make demand area optional: %v", err)
+	}
 	if areaRelationsReady {
 		migrator := NewServer.db.DB().Migrator()
 		if migrator.HasColumn("areas", "type") {
@@ -94,7 +89,7 @@ func NewServer(
 
 	// Declare Server config
 	server := &http.Server{
-		Addr:         fmt.Sprintf(":%d", NewServer.port),
+		Addr:         fmt.Sprintf(":%d", port),
 		Handler:      NewServer.RegisterRoutes(),
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  10 * time.Second,

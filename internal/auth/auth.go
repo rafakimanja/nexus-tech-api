@@ -13,7 +13,6 @@ import (
 
 const (
 	url_callback = "http://localhost:3333/auth/google/callback"
-	providerName = "google"
 )
 
 // NewAuth configures the Google OAuth provider. It must be called before the

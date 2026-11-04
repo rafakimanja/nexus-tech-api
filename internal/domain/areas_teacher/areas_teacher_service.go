@@ -26,6 +26,13 @@ func (s *service) GetByProfessorID(professorID int) ([]ProfessorArea, error) {
 }
 
 func (s *service) ReplaceByProfessorID(professorID int, associations []AssociationInput) error {
+	if err := ValidateAssociations(associations); err != nil {
+		return err
+	}
+	return s.repo.ReplaceByProfessorID(professorID, associations)
+}
+
+func ValidateAssociations(associations []AssociationInput) error {
 	seen := make(map[uint]struct{}, len(associations))
 	for i := range associations {
 		associations[i].Type = strings.ToLower(strings.TrimSpace(associations[i].Type))
@@ -44,5 +51,5 @@ func (s *service) ReplaceByProfessorID(professorID int, associations []Associati
 			return fmt.Errorf("%w: type %q; expected %q or %q", ErrInvalidAssociation, association.Type, AreaTypeTechnical, AreaTypeInterest)
 		}
 	}
-	return s.repo.ReplaceByProfessorID(professorID, associations)
+	return nil
 }

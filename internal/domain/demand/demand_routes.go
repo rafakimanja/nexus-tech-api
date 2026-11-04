@@ -15,5 +15,9 @@ func (r *DemandaRouter) RegisterRoutes(router *gin.RouterGroup) {
 	router.GET("/", r.handler.GetDemandas)
 	router.GET("/:id", r.handler.GetDemandaByID)
 	router.PUT("/:id", r.handler.UpdateDemanda)
-	router.DELETE("/:id", r.handler.DeleteDemanda)
+	// DELETE preserves the record and requires the same reason as cancelar.
+	router.DELETE("/:id", r.handler.Action("cancelar"))
+	for _, action := range []string{"analisar", "devolver", "assumir", "concluir", "cancelar"} {
+		router.POST("/:id/"+action, r.handler.Action(action))
+	}
 }

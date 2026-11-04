@@ -1,4 +1,4 @@
-	// Command seed creates the database schema and inserts development data.
+// Command seed creates the database schema and inserts development data.
 // Run it independently with: go run ./cmd/seed
 package main
 
@@ -33,6 +33,12 @@ func main() {
 	}
 	if err := db.AutoMigrate(models...); err != nil {
 		log.Fatalf("could not migrate database: %v", err)
+	}
+	if err := db.Exec("ALTER TABLE demandas ALTER COLUMN professor_id DROP NOT NULL").Error; err != nil {
+		log.Fatalf("could not make demand professor optional: %v", err)
+	}
+	if err := db.Exec("ALTER TABLE demandas ALTER COLUMN area_id DROP NOT NULL").Error; err != nil {
+		log.Fatalf("could not make demand area optional: %v", err)
 	}
 	// Older schema versions may have attached profile-to-user foreign keys to
 	// users instead of their profile tables. Those reversed constraints prevent
@@ -87,7 +93,7 @@ func seedDemoRecords(db *gorm.DB) error {
 			return fmt.Errorf("demandante role %s: %w", spec.email, err)
 		}
 		profile := applicant.Demandante{
-			ID: account.ID, Phone: spec.phone, Type: "Pessoa física",
+			ID: account.ID, Phone: spec.phone, Type: "pessoaFisica",
 			CpfCnpj: spec.cpf, Adress: spec.address, Strikes: 0,
 		}
 		if err := db.Where("id = ?", account.ID).FirstOrCreate(&profile).Error; err != nil {
@@ -114,7 +120,7 @@ func seedDemoRecords(db *gorm.DB) error {
 		if err := db.Model(&account).Update("role", "professor").Error; err != nil {
 			return fmt.Errorf("professor role %s: %w", spec.email, err)
 		}
-		profile := teacher.Professor{ID: account.ID, Siape: spec.siape, Is_active: true}
+		profile := teacher.Professor{ID: account.ID, Siape: fmt.Sprint(spec.siape), Is_active: true}
 		if err := db.Where("id = ?", account.ID).FirstOrCreate(&profile).Error; err != nil {
 			return fmt.Errorf("professor profile %s: %w", spec.email, err)
 		}
@@ -154,12 +160,17 @@ func seedDemoRecords(db *gorm.DB) error {
 		{"Melhoria da rede do laboratório (Demo)", "Avaliar a cobertura e sugerir melhorias para a rede do laboratório de informática.", "Aberta", "Redes de Computadores", 0, 2},
 	}
 	for _, spec := range demandSpecs {
+		professorID := professors[spec.professor].ID
+		areaID := areaIDs[spec.area]
 		entry := demand.Demanda{
 			DemandanteID: requesters[spec.requester].ID,
-			ProfessorID:  professors[spec.professor].ID,
-			AreaID:       areaIDs[spec.area],
+			AreaID:       &areaID,
 			Title:        spec.title, Description: spec.description,
-			Status: spec.status, IsCancelled: false,
+			PublicoAlvo: "Comunidade acadêmica", Impacto: "Melhorar os serviços da instituição",
+			Status: demand.Cadastrada, IsCancelled: false,
+		}
+		if spec.status == "Em andamento" {
+			entry.Status, entry.ProfessorID = demand.EmProducao, &professorID
 		}
 		if err := db.Where("title = ?", spec.title).FirstOrCreate(&entry).Error; err != nil {
 			return fmt.Errorf("demand %q: %w", spec.title, err)

@@ -5,18 +5,22 @@ info:
 
 http:
   method: POST
-  url: "{{url}}/teachers"
+  url: "{{url}}/teachers/"
   body:
     type: json
     data: |-
       {
-        "id": 2,
-        "siape": 12345678,
-        "is_active": true
+        "name": "Nome do professor",
+        "photo_url": null,
+        "siape": "0123456",
+        "areas": [
+          {"areas_id": 1, "type": "técnica"},
+          {"areas_id": 2, "type": "interesse"}
+        ]
       }
   auth:
     type: bearer
-    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3OTE3NTY2NjMsImlkIjoyLCJyb2xlIjoicHJvZmVzc29yIn0.j9um6pebZzqkJhcKU_86GOTW-Ca-rTKIt6MDTMMH4cc
+    token: "{{access_token}}"
 
 settings:
   encodeUrl: true

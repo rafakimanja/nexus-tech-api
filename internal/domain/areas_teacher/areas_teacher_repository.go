@@ -27,6 +27,14 @@ func (r *repository) FindByProfessorID(professorID int) ([]ProfessorArea, error)
 
 func (r *repository) ReplaceByProfessorID(professorID int, associations []AssociationInput) error {
 	return r.db.Transaction(func(tx *gorm.DB) error {
+		// Serialize replacements for the same professor to avoid interleaved lists.
+		var professorIDLocked uint
+		if err := tx.Raw("SELECT id FROM professors WHERE id = ? FOR UPDATE", professorID).Scan(&professorIDLocked).Error; err != nil {
+			return err
+		}
+		if professorIDLocked == 0 {
+			return gorm.ErrRecordNotFound
+		}
 		var count int64
 		if err := tx.Table("professors").Where("id = ?", professorID).Count(&count).Error; err != nil {
 			return err

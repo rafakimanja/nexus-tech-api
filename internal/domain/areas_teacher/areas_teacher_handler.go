@@ -1,6 +1,7 @@
 package areas_teacher
 
 import (
+	"api/internal/access"
 	"errors"
 	"log"
 	"net/http"
@@ -24,6 +25,10 @@ func (h *AreasTeacherHandler) GetByProfessorID(c *gin.Context) {
 	if !ok {
 		return
 	}
+	if c.GetString("role") != "admin" && c.GetUint("userID") != uint(professorID) {
+		access.Deny(c)
+		return
+	}
 
 	associations, err := h.service.GetByProfessorID(professorID)
 	if err != nil {
@@ -40,6 +45,10 @@ func (h *AreasTeacherHandler) GetByProfessorID(c *gin.Context) {
 func (h *AreasTeacherHandler) ReplaceByProfessorID(c *gin.Context) {
 	professorID, ok := parseProfessorID(c)
 	if !ok {
+		return
+	}
+	if c.GetString("role") != "professor" || c.GetUint("userID") != uint(professorID) {
+		access.Deny(c)
 		return
 	}
 	var request struct {

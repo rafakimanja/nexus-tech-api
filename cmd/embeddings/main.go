@@ -4,7 +4,7 @@ import (
 	"log"
 
 	"api/internal/database"
-	"api/internal/server"
+	"api/internal/embedding"
 )
 
 func main() {
@@ -17,9 +17,9 @@ func main() {
 
 	db := dbService.DB()
 
-	log.Println("Gerando embeddings das areas...")
+	log.Println("Gerando embeddings pendentes de áreas e demandas...")
 
-	if err := server.UpdateMissingAreasEmbeddings(db); err != nil {
+	if err := embedding.NewProcessor(db).ProcessPending(); err != nil {
 		log.Fatalf("Erro ao gerar embeddings: %v", err)
 	}
 

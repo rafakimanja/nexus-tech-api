@@ -16,8 +16,8 @@ import (
 	"api/internal/domain/areas_teacher"
 	"api/internal/domain/demand"
 	"api/internal/domain/teacher"
-	"api/internal/domain/uauth"
 	"api/internal/domain/user"
+	"api/internal/embedding"
 	"api/internal/server"
 )
 
@@ -47,18 +47,19 @@ func gracefulShutdown(apiServer *http.Server, done chan bool) {
 }
 
 func main() {
+	if err := user.ValidateJWTConfig(); err != nil {
+		log.Fatalf("authentication configuration error: %v", err)
+	}
 	db := database.New()
 	logger := log.Default()
+	embedder := embedding.NewProcessor(db.DB())
 
 	userRepository := user.NewRepository(db.DB())
 	userService := user.NewService(userRepository)
 	userHandler := user.NewHandler(userService, logger)
 
-	userAuthRepository := uauth.NewRepository(db.DB())
-	userAuthService := uauth.NewService(userAuthRepository)
-
 	demandRepository := demand.NewRepository(db.DB())
-	demandService := demand.NewService(demandRepository)
+	demandService := demand.NewService(demandRepository, embedder)
 	demandHandler := demand.NewHandler(demandService, logger)
 
 	applicantRepository := applicant.NewRepository(db.DB())
@@ -66,7 +67,7 @@ func main() {
 	applicantHandler := applicant.NewHandler(applicantService, logger)
 
 	areasRepository := areas.NewRepository(db.DB())
-	areasService := areas.NewService(areasRepository)
+	areasService := areas.NewService(areasRepository, embedder)
 	areasHandler := areas.NewHandler(areasService, logger)
 
 	areasTeacherRepository := areas_teacher.NewRepository(db.DB())
@@ -74,7 +75,7 @@ func main() {
 	areasTeacherHandler := areas_teacher.NewHandler(areasTeacherService, logger)
 
 	teacherRepository := teacher.NewRepository(db.DB())
-	teacherService := teacher.NewService(teacherRepository, userRepository, areasTeacherService)
+	teacherService := teacher.NewService(teacherRepository)
 	teacherHandler := teacher.NewHandler(teacherService, logger)
 
 	if err := auth.NewAuth(); err != nil {
@@ -84,21 +85,21 @@ func main() {
 	server := server.NewServer(
 		db,
 		logger,
-		userService,
 		userHandler,
-		userAuthService,
-		demandService,
 		demandHandler,
-		applicantService,
 		applicantHandler,
-		areasService,
 		areasHandler,
 		areasTeacherHandler,
-		teacherService,
 		teacherHandler,
 	)
 
-	// Create a done channel to signal when the shutdown is complete
+	// Expiration runs only after schema initialization and stops with the API.
+	expiryCtx, stopExpiry := context.WithCancel(context.Background())
+	defer stopExpiry()
+	server.RegisterOnShutdown(stopExpiry)
+	go demand.RunExpiry(expiryCtx, demandService, logger)
+
+	// Create a done channel to signal when the shutdown is complete.
 	done := make(chan bool, 1)
 
 	// Run graceful shutdown in a separate goroutine

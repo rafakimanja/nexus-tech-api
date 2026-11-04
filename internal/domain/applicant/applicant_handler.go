@@ -1,11 +1,13 @@
 package applicant
 
 import (
+	"errors"
 	"log"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type ApplicantHandler struct {
@@ -23,7 +25,11 @@ func (h *ApplicantHandler) GetApplicants(c *gin.Context) {
 		h.respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, applicants)
+	dtos := make([]DemandanteDTO, 0, len(applicants))
+	for _, a := range applicants {
+		dtos = append(dtos, a.NewDTO())
+	}
+	c.JSON(http.StatusOK, dtos)
 }
 
 func (h *ApplicantHandler) GetApplicantByID(c *gin.Context) {
@@ -35,59 +41,14 @@ func (h *ApplicantHandler) GetApplicantByID(c *gin.Context) {
 
 	applicant, err := h.service.GetByID(id)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			h.respondError(c, http.StatusNotFound, "applicant not found")
+			return
+		}
 		h.respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, applicant)
-}
-
-func (h *ApplicantHandler) CreateApplicant(c *gin.Context) {
-	var applicant Demandante
-	if err := c.ShouldBindJSON(&applicant); err != nil {
-		h.respondError(c, http.StatusBadRequest, "objeto 'Demandante' invalido")
-		return
-	}
-
-	id, err := h.service.Create(applicant)
-	if err != nil {
-		h.respondError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	c.JSON(http.StatusCreated, gin.H{"applicantID": id})
-}
-
-func (h *ApplicantHandler) UpdateApplicant(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		h.respondError(c, http.StatusBadRequest, "invalid ID")
-		return
-	}
-
-	var applicant Demandante
-	if err := c.ShouldBindJSON(&applicant); err != nil {
-		h.respondError(c, http.StatusBadRequest, "objeto 'Demandante' invalido")
-		return
-	}
-
-	if err := h.service.Update(id, applicant); err != nil {
-		h.respondError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	c.Status(http.StatusNoContent)
-}
-
-func (h *ApplicantHandler) DeleteApplicant(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		h.respondError(c, http.StatusBadRequest, "invalid ID")
-		return
-	}
-
-	if err := h.service.DeleteByID(id); err != nil {
-		h.respondError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	c.Status(http.StatusNoContent)
+	c.JSON(http.StatusOK, applicant.NewDTO())
 }
 
 func (h *ApplicantHandler) respondError(c *gin.Context, status int, message string) {
