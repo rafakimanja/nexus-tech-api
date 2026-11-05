@@ -1,0 +1,14 @@
+.git
+.env
+.env.*
+!.env.example
+.aws
+.agents
+.codex
+.idea
+.vscode
+tmp
+main
+*.exe
+*.test
+*.out
