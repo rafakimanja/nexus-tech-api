@@ -152,7 +152,6 @@ pelo FCM e o commit pode repetir um envio. A tag Android estável reduz avisos
 duplicados na bandeja. Não há garantia de entrega imediata nem recibo de leitura
 do push. O botão “forçar parada” do Android impede o recebimento até reabrir o app.
 
-
 Referências oficiais:
 [FCM no Flutter](https://firebase.google.com/docs/cloud-messaging/flutter/get-started),
 [recebimento](https://firebase.google.com/docs/cloud-messaging/flutter/receive-messages),
