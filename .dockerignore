@@ -3,6 +3,7 @@
 .env.*
 !.env.example
 .aws
+run/
 .agents
 .codex
 .idea

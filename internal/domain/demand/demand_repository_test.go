@@ -9,6 +9,7 @@ import (
 	"sync"
 	"testing"
 	"time"
+	"api/internal/domain/notification"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/stdlib"
@@ -71,6 +72,7 @@ func postgresFixture(t *testing.T) *gorm.DB {
 			t.Fatal(err)
 		}
 	}
+	if err := db.AutoMigrate(&notification.Notification{}, &notification.Device{}, &notification.Delivery{}); err != nil { t.Fatal(err) }
 	return db
 }
 func TestDemandPersistencePostgres(t *testing.T) {
@@ -123,6 +125,10 @@ func TestDemandPersistencePostgres(t *testing.T) {
 	}
 	if successes != 1 || conflicts != 1 {
 		t.Fatalf("successes=%d conflicts=%d", successes, conflicts)
+	}
+	var notices int64
+	if err := db.Model(&notification.Notification{}).Where("resource_id = ?", id).Count(&notices).Error; err != nil || notices != 1 {
+		t.Fatalf("concurrent reservation should notify once: count=%d err=%v", notices, err)
 	}
 	dto, err = s.Get(ctx, owner, id)
 	if err != nil || dto.ProfessorID == nil || dto.ProfessorNome == nil || dto.AnaliseExpiraEm == nil {
@@ -177,6 +183,9 @@ func TestDemandPersistencePostgres(t *testing.T) {
 	}
 	if err := restarted.Expire(ctx); err != nil {
 		t.Fatal(err)
+	}
+	if err := db.Model(&notification.Notification{}).Where("resource_id = ? AND type = ?", expired.ID, "demandaDevolvida").Count(&notices).Error; err != nil || notices != 1 {
+		t.Fatalf("expiration should notify once: count=%d err=%v", notices, err)
 	}
 	stored, err = repo.FindByID(ctx, expired.ID)
 	if err != nil || stored.Status != Cadastrada || stored.ProfessorID != nil || stored.AnaliseExpiraEm != nil {

@@ -17,6 +17,7 @@ recomendações por similaridade de texto usando Ollama e pgvector.
 | Integrar Google, JWT e `/me` | [Autenticação](autenticacao.md) |
 | Cadastrar e editar demandantes e professores | [Perfis](perfis.md) |
 | Publicar, consultar e movimentar demandas | [Demandas](demandas.md) |
+| Integrar notificações, denúncias e push Android | [Notificações](notificacoes.md) |
 | Consultar exemplos de requisições manuais | [Coleção HTTP](../http/nexus-tech-api/README.md) |
 | Acompanhar trabalho restante | [Pendências de integração](pendencias-integracao.md) |
 
@@ -41,8 +42,10 @@ contrato de cada recurso, sem aplicar uma conversão global de nomes no cliente.
 ## Escopo atual
 
 Autenticação, perfis, áreas, demandas, associações docentes e recomendações têm
-rotas implementadas. A API ainda não oferece chat, notificações, upload de
-arquivos, denúncias, republicação nem gestão administrativa completa. Não há
+rotas implementadas. Notificações, dispositivos FCM e cadastro/consulta de
+denúncias também foram implementados; integração móvel e validação do push
+estão pendentes. A API ainda não oferece chat, upload de arquivos, julgamento
+de denúncias, republicação nem gestão administrativa completa. Não há
 refresh token, WebSocket, SSE ou contrato geral de paginação.
 
 Esta documentação descreve o comportamento atual, inclusive limitações. A

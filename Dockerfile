@@ -15,6 +15,8 @@ WORKDIR /
 COPY --from=build /out/api /api
 
 ENV PORT=8080
+# Supplied as a read-only runtime mount; never copy credentials into the image.
+ENV GOOGLE_APPLICATION_CREDENTIALS=/run/secrets/firebase-service-account.json
 EXPOSE 8080
 
 ENTRYPOINT ["/api"]
