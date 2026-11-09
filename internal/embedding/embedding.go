@@ -26,7 +26,7 @@ type Processor struct {
 }
 
 func NewProcessor(db *gorm.DB) *Processor {
-	return &Processor{db: db, client: &http.Client{Timeout: 5 * time.Second}, url: strings.TrimRight(os.Getenv("OLLAMA_URL"), "/")}
+	return &Processor{db: db, client: &http.Client{Timeout: 10 * time.Second}, url: strings.TrimRight(os.Getenv("OLLAMA_URL"), "/")}
 }
 
 func (p *Processor) generate(ctx context.Context, text string) (*pgvector.Vector, error) {
