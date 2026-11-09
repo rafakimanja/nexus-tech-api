@@ -55,7 +55,7 @@ func main() {
 	}
 	db := database.New()
 	logger := log.Default()
-	embedder := embedding.NewProcessor(db.DB())
+	embedder := embedding.NewWorker(embedding.NewProcessor(db.DB()))
 
 	userRepository := user.NewRepository(db.DB())
 	userService := user.NewService(userRepository)
@@ -100,11 +100,14 @@ func main() {
 	expiryCtx, stopExpiry := context.WithCancel(context.Background())
 	defer stopExpiry()
 	server.RegisterOnShutdown(stopExpiry)
+	go embedder.Run(expiryCtx, logger)
 	go demand.RunExpiry(expiryCtx, demandService, logger)
 	go recommendation.RunNotifications(expiryCtx, db.DB(), logger)
 	if project := os.Getenv("FCM_PROJECT_ID"); project != "" {
 		sender, err := notification.NewFCMSender(expiryCtx, project)
-		if err != nil { log.Fatalf("could not initialize FCM credentials: %v", err) }
+		if err != nil {
+			log.Fatalf("could not initialize FCM credentials: %v", err)
+		}
 		go notification.RunPush(expiryCtx, db.DB(), sender, logger)
 	} else {
 		logger.Print("FCM_PROJECT_ID not set: notifications are available in-app; push is disabled")

@@ -162,9 +162,15 @@ Entradas, respostas e exemplos completos: [demandas.md](demandas.md).
 ## Embeddings e recomendações
 
 Ao criar ou editar título/descrição de uma demanda ou nome de uma área, a API
-tenta gerar um vetor usando `mxbai-embed-large`, com 1024 dimensões. A chamada é
-síncrona, com timeout de cinco segundos; falhar não desfaz o cadastro. O vetor
-permanece pendente e pode ser reprocessado pelo comando `cmd/embeddings`.
+sinaliza um worker em segundo plano que gera um vetor usando `mxbai-embed-large`,
+com 1024 dimensões, sem bloquear a resposta do cadastro. O timeout por chamada é
+de dois minutos, configurável por `OLLAMA_TIMEOUT`. Falhar não desfaz o cadastro:
+o vetor permanece NULL, e o worker tenta novamente após um minuto do fim da
+rodada ou ao receber um novo sinal. Na inicialização, também recupera os registros
+pendentes, inclusive os anteriores à implantação. O banco é a fila durável;
+os sinais em memória apenas antecipam a próxima rodada. O processamento é
+sequencial por instância da API e é cancelado no encerramento. O comando
+`cmd/embeddings` continua disponível para reprocessamento manual.
 
 O processador só grava o vetor se o texto ainda corresponder ao usado na geração.
 O texto de uma demanda contém título e descrição; público-alvo e impacto não
@@ -174,4 +180,5 @@ As recomendações consideram demandas cadastradas, sem professor, não cancelad
 não excluídas e com vetor. A maior similaridade ponderada entre as áreas do
 professor determina a classificação: peso 0,8 para técnica e 0,5 para interesse.
 Valores negativos são limitados a zero. Sem áreas/vetores utilizáveis, o resultado
-é vazio. Não há fila automática para retentativas de embeddings.
+é vazio. Após a gravação dos vetores, as recomendações passam a considerá-los;
+a rotina de notificações verifica novas recomendações a cada 30 segundos.

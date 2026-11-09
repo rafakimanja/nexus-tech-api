@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"math"
 	"net/http"
 	"os"
@@ -26,7 +27,15 @@ type Processor struct {
 }
 
 func NewProcessor(db *gorm.DB) *Processor {
-	return &Processor{db: db, client: &http.Client{Timeout: 10 * time.Second}, url: strings.TrimRight(os.Getenv("OLLAMA_URL"), "/")}
+	timeout := 2 * time.Minute
+	if value := os.Getenv("OLLAMA_TIMEOUT"); value != "" {
+		if parsed, err := time.ParseDuration(value); err == nil && parsed > 0 {
+			timeout = parsed
+		} else {
+			log.Printf("invalid OLLAMA_TIMEOUT; using %s", timeout)
+		}
+	}
+	return &Processor{db: db, client: &http.Client{Timeout: timeout}, url: strings.TrimRight(strings.TrimSpace(os.Getenv("OLLAMA_URL")), "/")}
 }
 
 func (p *Processor) generate(ctx context.Context, text string) (*pgvector.Vector, error) {
@@ -71,53 +80,74 @@ func (p *Processor) generate(ctx context.Context, text string) (*pgvector.Vector
 }
 
 func (p *Processor) ProcessDemand(id uint) error {
+	return p.processDemand(context.Background(), id)
+}
+
+func (p *Processor) processDemand(ctx context.Context, id uint) error {
+	db := p.db.WithContext(ctx)
 	var d demand.Demanda
-	if err := p.db.First(&d, id).Error; err != nil {
+	if err := db.First(&d, id).Error; err != nil {
 		return err
 	}
 	if d.Embedding != nil {
 		return nil
 	}
-	v, err := p.generate(context.Background(), d.ToEmbeddingText())
+	v, err := p.generate(ctx, d.ToEmbeddingText())
 	if err != nil {
 		return err
 	}
 	// Do not store a vector generated for text changed while Ollama was running.
-	return p.db.Model(&d).Where("embedding IS NULL AND title = ? AND description = ?", d.Title, d.Description).Update("embedding", v).Error
+	return db.Model(&d).Where("embedding IS NULL AND title = ? AND description = ?", d.Title, d.Description).Update("embedding", v).Error
 }
 
 func (p *Processor) ProcessArea(id uint) error {
+	return p.processArea(context.Background(), id)
+}
+
+func (p *Processor) processArea(ctx context.Context, id uint) error {
+	db := p.db.WithContext(ctx)
 	var a areas.Area
-	if err := p.db.First(&a, id).Error; err != nil {
+	if err := db.First(&a, id).Error; err != nil {
 		return err
 	}
 	if a.Embedding != nil {
 		return nil
 	}
-	v, err := p.generate(context.Background(), a.Name)
+	v, err := p.generate(ctx, a.Name)
 	if err != nil {
 		return err
 	}
-	return p.db.Model(&a).Where("embedding IS NULL AND name = ?", a.Name).Update("embedding", v).Error
+	return db.Model(&a).Where("embedding IS NULL AND name = ?", a.Name).Update("embedding", v).Error
 }
 
 // ProcessPending attempts every pending item, even if one item fails.
 func (p *Processor) ProcessPending() error {
+	return p.ProcessPendingContext(context.Background())
+}
+
+func (p *Processor) ProcessPendingContext(ctx context.Context) error {
+	db := p.db.WithContext(ctx)
 	var areaIDs, demandIDs []uint
-	if err := p.db.Model(&areas.Area{}).Where("embedding IS NULL").Pluck("id", &areaIDs).Error; err != nil {
+	if err := db.Model(&areas.Area{}).Where("embedding IS NULL").Order("id").Pluck("id", &areaIDs).Error; err != nil {
 		return err
 	}
-	if err := p.db.Model(&demand.Demanda{}).Where("embedding IS NULL").Pluck("id", &demandIDs).Error; err != nil {
+	if err := db.Model(&demand.Demanda{}).Where("embedding IS NULL").Order("id").Pluck("id", &demandIDs).Error; err != nil {
 		return err
 	}
 	var failures []string
 	for _, id := range areaIDs {
-		if err := p.ProcessArea(id); err != nil {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		if err := p.processArea(ctx, id); err != nil {
 			failures = append(failures, fmt.Sprintf("area %d: %v", id, err))
 		}
 	}
 	for _, id := range demandIDs {
-		if err := p.ProcessDemand(id); err != nil {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		if err := p.processDemand(ctx, id); err != nil {
 			failures = append(failures, fmt.Sprintf("demand %d: %v", id, err))
 		}
 	}

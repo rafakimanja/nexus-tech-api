@@ -36,6 +36,7 @@ credenciais reais.
 | `SESSION_SECRET` | Segredo de ao menos 32 caracteres para cookies do OAuth manual |
 | `APP_ENV` | Quando igual a `production`, marca o cookie OAuth como `Secure` |
 | `OLLAMA_URL` | Endereço do Ollama, por exemplo `http://localhost:11434` |
+| `OLLAMA_TIMEOUT` | Timeout por chamada de embedding, em duração Go (ex.: `2m`, `90s`). Padrão: `2m`; valores inválidos usam o padrão e geram aviso no log. |
 | `TEST_DATABASE_URL` | Conexão exclusiva dos testes de integração; não substitui a conexão da API |
 
 Exemplo de estrutura para configurar o ambiente local, substituindo todos os
