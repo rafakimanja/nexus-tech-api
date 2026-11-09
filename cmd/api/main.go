@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"os/signal"
 	"syscall"
 	"time"
@@ -15,6 +16,8 @@ import (
 	"api/internal/domain/areas"
 	"api/internal/domain/areas_teacher"
 	"api/internal/domain/demand"
+	"api/internal/domain/notification"
+	"api/internal/domain/recommendation"
 	"api/internal/domain/teacher"
 	"api/internal/domain/user"
 	"api/internal/embedding"
@@ -98,6 +101,14 @@ func main() {
 	defer stopExpiry()
 	server.RegisterOnShutdown(stopExpiry)
 	go demand.RunExpiry(expiryCtx, demandService, logger)
+	go recommendation.RunNotifications(expiryCtx, db.DB(), logger)
+	if project := os.Getenv("FCM_PROJECT_ID"); project != "" {
+		sender, err := notification.NewFCMSender(expiryCtx, project)
+		if err != nil { log.Fatalf("could not initialize FCM credentials: %v", err) }
+		go notification.RunPush(expiryCtx, db.DB(), sender, logger)
+	} else {
+		logger.Print("FCM_PROJECT_ID not set: notifications are available in-app; push is disabled")
+	}
 
 	// Create a done channel to signal when the shutdown is complete.
 	done := make(chan bool, 1)

@@ -13,6 +13,8 @@ import (
 	"api/internal/domain/areas"
 	"api/internal/domain/areas_teacher"
 	"api/internal/domain/demand"
+	"api/internal/domain/notification"
+	"api/internal/domain/report"
 	"api/internal/domain/session"
 	"api/internal/domain/teacher"
 	"api/internal/domain/uauth"
@@ -70,6 +72,9 @@ func NewServer(
 	NewServer.db.DB().AutoMigrate(&applicant.Demandante{})
 	if err := NewServer.db.DB().AutoMigrate(&demand.Demanda{}); err != nil {
 		log.Fatalf("could not migrate demands: %v", err)
+	}
+	if err := NewServer.db.DB().AutoMigrate(&notification.Notification{}, &notification.Device{}, &notification.Delivery{}, &report.Report{}); err != nil {
+		log.Fatalf("could not migrate notifications and reports: %v", err)
 	}
 	if err := NewServer.db.DB().Exec("ALTER TABLE demandas ALTER COLUMN professor_id DROP NOT NULL").Error; err != nil {
 		log.Fatalf("could not make demand professor optional: %v", err)

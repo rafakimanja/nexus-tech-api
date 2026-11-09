@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"api/internal/domain/areas"
+	"api/internal/domain/notification"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -96,6 +97,7 @@ func (r *repository) Change(ctx context.Context, id uint, change func(*Demanda) 
 			return err
 		}
 		oldTitle, oldDescription, oldArea := d.Title, d.Description, d.AreaID
+		oldStatus := d.Status
 		if err := change(&d); err != nil {
 			return err
 		}
@@ -119,6 +121,9 @@ func (r *repository) Change(ctx context.Context, id uint, change func(*Demanda) 
 		if err := tx.Model(&d).Updates(values).Error; err != nil {
 			return err
 		}
+		if oldStatus != d.Status {
+			if err := notifyStatus(tx, d); err != nil { return err }
+		}
 		return details(tx).First(&d, id).Error
 	})
 	return d, err
@@ -126,8 +131,21 @@ func (r *repository) Change(ctx context.Context, id uint, change func(*Demanda) 
 
 // PostgreSQL rechecks the predicate after waiting for a concurrent writer.
 func (r *repository) Expire(ctx context.Context, now time.Time) error {
-	return r.db.WithContext(ctx).Model(&Demanda{}).
-		Where("status = ? AND analise_expira_em <= ?", EmAnalise, now).
-		Updates(map[string]any{"status": Cadastrada, "professor_id": nil,
-			"analise_iniciada_em": nil, "analise_expira_em": nil, "is_cancelled": false, "updated_at": now}).Error
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var expired []Demanda
+		if err := tx.Clauses(clause.Locking{Strength:"UPDATE"}).Where("status = ? AND analise_expira_em <= ?", EmAnalise, now).Order("id").Find(&expired).Error; err != nil { return err }
+		for _, d := range expired {
+			if err := tx.Model(&d).Updates(map[string]any{"status": Cadastrada, "professor_id": nil,
+				"analise_iniciada_em": nil, "analise_expira_em": nil, "is_cancelled": false, "updated_at": now}).Error; err != nil { return err }
+			d.Status = Cadastrada
+			if err := notifyStatus(tx, d); err != nil { return err }
+		}
+		return nil
+	})
+}
+
+func notifyStatus(tx *gorm.DB, d Demanda) error {
+	types := map[string]string{EmAnalise:"demandaEmAnalise",EmProducao:"demandaEmProducao",Cadastrada:"demandaDevolvida",Concluida:"demandaConcluida",Cancelada:"demandaCancelada"}
+	labels := map[string]string{EmAnalise:"em análise",EmProducao:"em produção",Cadastrada:"disponível na prateleira",Concluida:"concluída",Cancelada:"cancelada"}
+	return notification.Enqueue(tx,&notification.Notification{UserID:d.DemandanteID,Type:types[d.Status],Title:"Estado da demanda alterado",Body:d.Title+": "+labels[d.Status]+".",ResourceType:"demand",ResourceID:d.ID})
 }

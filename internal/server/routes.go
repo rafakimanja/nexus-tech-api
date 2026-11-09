@@ -8,6 +8,8 @@ import (
 	"api/internal/domain/demand"
 	"api/internal/domain/profile"
 	"api/internal/domain/recommendation"
+	"api/internal/domain/notification"
+	"api/internal/domain/report"
 	"api/internal/domain/session"
 	"api/internal/domain/teacher"
 	"api/internal/domain/user"
@@ -35,6 +37,12 @@ func (s *Server) RegisterRoutes() http.Handler {
 	sessionHandler := session.NewHandler(s.sessionService, s.logger)
 	r.POST("/login/v2", sessionHandler.Login)
 	r.GET("/me", s.AuthMiddleware(), sessionHandler.Me)
+	notification.NewHandler(s.db.DB()).Register(r.Group("/notifications", s.AuthMiddleware()))
+	reportHandler := report.NewHandler(s.db.DB())
+	reports := r.Group("/reports", s.AuthMiddleware())
+	reports.POST("", reportHandler.Create)
+	reports.GET("", reportHandler.List)
+	reports.GET("/:id", reportHandler.Get)
 	r.GET("/auth/google", s.GetAuthGoogle)
 	r.GET("/auth/google/callback", s.GetAuthGoogleCallback)
 
