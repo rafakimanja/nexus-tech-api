@@ -1,9 +1,11 @@
 package notification
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -14,6 +16,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 func TestFCMSender(t *testing.T) {
@@ -52,6 +55,39 @@ func fixture(t *testing.T) *gorm.DB {
 
 type fakeSender struct { calls int; err error }
 func (s *fakeSender) Send(_ context.Context,_ Device,_ Notification)error{s.calls++;return s.err}
+
+func TestDispatchIdleQueuePostgres(t *testing.T) {
+	db := fixture(t)
+	var logs bytes.Buffer
+	db = db.Session(&gorm.Session{Logger: logger.New(log.New(&logs, "", 0), logger.Config{LogLevel: logger.Warn})})
+	sender := &fakeSender{}
+	ctx := context.Background()
+	if err := Dispatch(ctx, db, sender); err != nil {
+		t.Fatalf("empty queue: %v", err)
+	}
+	if logs.Len() != 0 || sender.calls != 0 {
+		t.Fatalf("empty queue logged an error or sent a message: calls=%d logs=%s", sender.calls, logs.String())
+	}
+	// A delivery scheduled for later also means there is no work right now.
+	delivery := Delivery{NotificationID: 999, DeviceID: 999, NextAttemptAt: time.Now().Add(time.Hour)}
+	if err := db.Create(&delivery).Error; err != nil {
+		t.Fatal(err)
+	}
+	logs.Reset()
+	if err := Dispatch(ctx, db, sender); err != nil {
+		t.Fatalf("future delivery: %v", err)
+	}
+	if logs.Len() != 0 || sender.calls != 0 {
+		t.Fatalf("idle queue logged an error or sent a message: calls=%d logs=%s", sender.calls, logs.String())
+	}
+	// Missing related data must not be mistaken for an idle queue.
+	if err := db.Model(&delivery).Update("next_attempt_at", time.Now().Add(-time.Minute)).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := Dispatch(ctx, db, sender); !errors.Is(err, gorm.ErrRecordNotFound) {
+		t.Fatalf("missing notification must propagate: %v", err)
+	}
+}
 
 func TestInboxAndDeliveryPostgres(t *testing.T) {
 	db:=fixture(t);ctx:=context.Background()

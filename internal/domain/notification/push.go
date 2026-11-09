@@ -50,9 +50,21 @@ func (s *FCMSender) Send(ctx context.Context, device Device, n Notification) err
 // is at-least-once: a crash after FCM accepts a message can cause a retry.
 func Dispatch(ctx context.Context,db *gorm.DB,sender Sender) error {
 	for i:=0;i<20;i++ {
+		empty := false
 		err:=db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 			var delivery Delivery
-			if err:=tx.Clauses(clause.Locking{Strength:"UPDATE",Options:"SKIP LOCKED"}).Where("finished_at IS NULL AND next_attempt_at <= ?",time.Now().UTC()).Order("id").First(&delivery).Error; err!=nil{return err}
+			// An idle queue is expected. Find does not emit ErrRecordNotFound;
+			// Limit preserves the single-delivery lock and RowsAffected signals idle.
+			result := tx.Clauses(clause.Locking{Strength: "UPDATE", Options: "SKIP LOCKED"}).
+				Where("finished_at IS NULL AND next_attempt_at <= ?", time.Now().UTC()).
+				Order("id").Limit(1).Find(&delivery)
+			if result.Error != nil {
+				return result.Error
+			}
+			if result.RowsAffected == 0 {
+				empty = true
+				return nil
+			}
 			var n Notification; if err:=tx.First(&n,delivery.NotificationID).Error; err!=nil{return err}
 			var device Device; err:=tx.Clauses(clause.Locking{Strength:"UPDATE"}).First(&device,delivery.DeviceID).Error
 			now:=time.Now().UTC()
@@ -63,7 +75,12 @@ func Dispatch(ctx context.Context,db *gorm.DB,sender Sender) error {
 			if err==nil || delivery.Attempts>=8 { delivery.FinishedAt=&now } else {delivery.NextAttemptAt=now.Add(time.Duration(1<<delivery.Attempts)*30*time.Second)}
 			return tx.Save(&delivery).Error
 		})
-		if errors.Is(err,gorm.ErrRecordNotFound){return nil}; if err!=nil{return err}
+		if err != nil {
+			return err
+		}
+		if empty {
+			return nil
+		}
 	}
 	return nil
 }
