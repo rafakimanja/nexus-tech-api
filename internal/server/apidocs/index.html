@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nexus Tech API · Rotas</title>
+  <style>
+    :root{font:15px/1.5 system-ui,sans-serif;color:#172033;background:#f5f7fb}body{margin:0}header{background:#172033;color:white;padding:32px max(24px,calc((100% - 1050px)/2))}header p{color:#ccd6e7}main{max-width:1050px;margin:32px auto;padding:0 24px}h1,h2,p{margin-top:0}a{color:#2473c7}header a{color:#a5d7ff}input,textarea,button{font:inherit}input,textarea{box-sizing:border-box;width:100%;padding:9px;border:1px solid #aebacf;border-radius:5px}textarea{min-height:125px;font-family:monospace}button{padding:8px 16px;background:#175fc0;border:0;border-radius:5px;color:white;cursor:pointer}label{display:block;font-weight:600;margin:12px 0 4px}.auth,.op{background:white;border:1px solid #d8e0ed;border-radius:7px;margin-bottom:10px}.auth{padding:20px;margin-bottom:28px}details{padding:0}summary{display:flex;align-items:center;gap:14px;padding:12px;cursor:pointer;list-style:none}summary::-webkit-details-marker{display:none}.method{width:67px;text-align:center;border-radius:4px;padding:4px 0;color:white;font-weight:700;background:#2674ba}.post{background:#278861}.put{background:#c88422}.patch{background:#7357a5}.delete{background:#be4747}.path{font-family:monospace;font-weight:700}.desc{color:#58667b;margin-left:auto}.detail{border-top:1px solid #e1e6ef;padding:16px}.note{color:#52627a}.response{white-space:pre-wrap;overflow-wrap:anywhere;background:#172033;color:#e4ecf9;border-radius:5px;padding:12px;max-height:400px;overflow:auto}.warning{border-left:3px solid #c88422;padding-left:12px}.group{margin-top:32px}@media(max-width:600px){summary{flex-wrap:wrap}.desc{width:100%;margin-left:0}}
+  </style>
+</head>
+<body>
+<header><h1>Nexus Tech API</h1><p>Referência interativa das rotas</p><a href="/openapi.json">Baixar especificação OpenAPI</a></header>
+<main>
+  <div class="auth">
+    <h2>Autorização</h2>
+    <p>Para autenticar e testar as rotas protegidas:</p>
+    <ol>
+      <li>Abra <a href="/login" target="_blank" rel="noopener noreferrer">/login</a>, entre com o Google e copie o valor de <code>id_token</code> exibido após o login.</li>
+      <li>Volte para esta página, abra <strong>POST /login/v2</strong> na seção Sessão e cole esse valor no campo <code>idToken</code> do corpo JSON. Clique em <strong>Executar</strong>.</li>
+      <li>Na resposta, copie o valor de <code>access_token</code> e cole no campo abaixo, sem escrever <code>Bearer</code>.</li>
+    </ol>
+    <label for="token">Token Bearer</label>
+    <input id="token" type="password" autocomplete="off" placeholder="Cole somente o token, sem Bearer">
+    <p>O token fica somente nesta página até ela ser fechada ou recarregada.</p>
+    <p class="warning">Executar uma requisição altera dados reais da API conectada. Use uma conta e um ambiente de testes.</p>
+  </div>
+  <div id="routes">Carregando rotas…</div>
+</main>
+<script>
+'use strict';
+const root=document.getElementById('routes');
+function el(tag,text,cls){const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n}
+function field(parent,label,placeholder,value){const l=el('label',label);const input=el('input');input.placeholder=placeholder||'';input.value=value||'';l.append(input);parent.append(l);return input}
+fetch('/openapi.json').then(r=>{if(!r.ok)throw Error('HTTP '+r.status);return r.json()}).then(spec=>{
+ root.replaceChildren();const groups=new Map();
+ for(const [path,methods] of Object.entries(spec.paths)) for(const [method,op] of Object.entries(methods)){
+  const tag=op.tags[0];if(!groups.has(tag)){const section=el('section',undefined,'group');section.append(el('h2',tag));root.append(section);groups.set(tag,section)}
+  const details=el('details',undefined,'op');const summary=el('summary');summary.append(el('span',method.toUpperCase(),'method '+method),el('span',path,'path'),el('span',op.summary,'desc'));details.append(summary);
+  const body=el('div',undefined,'detail');body.append(el('p',op.description||''));const inputs=[];
+  for(const p of op.parameters||[]){const input=field(body,p.name+' ('+p.in+(p.required?', obrigatório':'')+')',p.description||'', '');inputs.push([p,input])}
+  let payload;if(op.requestBody){const example=op.requestBody.content['application/json'].example;const label=el('label','Corpo JSON'+(op.requestBody.required?' (obrigatório)':''));payload=el('textarea');payload.value=JSON.stringify(example||{},null,2);label.append(payload);body.append(label)}
+  const codes=el('p','Respostas: '+Object.entries(op.responses).map(([code,r])=>code+' '+r.description).join(' · '),'note');body.append(codes);
+  const send=el('button','Executar');send.type='button';const result=el('pre','A resposta aparecerá aqui.','response');send.onclick=async()=>{try{let url=path;const q=new URLSearchParams();for(const [p,input] of inputs){const v=input.value.trim();if(p.required&&!v)throw Error('Preencha '+p.name);if(v){if(p.in==='path')url=url.replace('{'+p.name+'}',encodeURIComponent(v));else q.set(p.name,v)}}if(q.size)url+='?'+q;const headers={};const token=document.getElementById('token').value.trim();if(token&&op.security?.length!==0)headers.Authorization='Bearer '+token;const options={method:method.toUpperCase(),headers};if(payload&&payload.value.trim()){JSON.parse(payload.value);headers['Content-Type']='application/json';options.body=payload.value}result.textContent='Enviando…';const r=await fetch(url,options);const text=await r.text();let display=text;try{display=JSON.stringify(JSON.parse(text),null,2)}catch{}result.textContent=r.status+' '+r.statusText+'\n'+display}catch(e){result.textContent='Erro: '+e.message}};body.append(send,result);details.append(body);groups.get(tag).append(details)
+ }
+}).catch(e=>{root.textContent='Não foi possível carregar a especificação: '+e.message});
+</script></body></html>
