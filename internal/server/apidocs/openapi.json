@@ -1,0 +1,1943 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Nexus Tech API",
+    "version": "1.0.0",
+    "description": "API de demandas, recomendações, notificações e moderação. Utilize o JWT retornado por /login/v2."
+  },
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "paths": {
+    "/": {
+      "get": {
+        "tags": [
+          "Sessão"
+        ],
+        "summary": "Mensagem de boas-vindas",
+        "description": "Público.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso"
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "500": {
+            "description": "Falha interna"
+          }
+        },
+        "security": []
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "Sessão"
+        ],
+        "summary": "Diagnóstico do banco",
+        "description": "Público.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso"
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "500": {
+            "description": "Falha interna"
+          }
+        },
+        "security": []
+      }
+    },
+    "/login": {
+      "get": {
+        "tags": [
+          "Sessão"
+        ],
+        "summary": "Página de login Google manual",
+        "description": "Público.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso"
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "500": {
+            "description": "Falha interna"
+          }
+        },
+        "security": []
+      }
+    },
+    "/auth/google": {
+      "get": {
+        "tags": [
+          "Sessão"
+        ],
+        "summary": "Iniciar autenticação Google",
+        "description": "Redirecionamento OAuth manual.",
+        "parameters": [],
+        "responses": {
+          "302": {
+            "description": "Sucesso"
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "500": {
+            "description": "Falha interna"
+          }
+        },
+        "security": []
+      }
+    },
+    "/auth/google/callback": {
+      "get": {
+        "tags": [
+          "Sessão"
+        ],
+        "summary": "Callback OAuth",
+        "description": "Retorna identidade Google; fluxo manual do navegador.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso"
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "500": {
+            "description": "Falha interna"
+          }
+        },
+        "security": []
+      }
+    },
+    "/login/v2": {
+      "post": {
+        "tags": [
+          "Sessão"
+        ],
+        "summary": "Autenticar com Google",
+        "description": "Troca o ID token Google por JWT da API.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso"
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "409": {
+            "description": "Conflito de estado ou registro"
+          },
+          "500": {
+            "description": "Falha interna"
+          }
+        },
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              },
+              "example": {
+                "idToken": "ID_TOKEN_GOOGLE"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me": {
+      "get": {
+        "tags": [
+          "Sessão"
+        ],
+        "summary": "Consultar sessão",
+        "description": "Aceita conta bloqueada e informa o motivo.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso"
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "Token ausente ou inválido"
+          },
+          "403": {
+            "description": "Acesso negado ou conta bloqueada"
+          },
+          "500": {
+            "description": "Falha interna"
+          }
+        }
+      }
+    },
+    "/applicants/": {
+      "get": {
+        "tags": [
+          "Demandantes"
+        ],
+        "summary": "Listar perfis",
+        "description": "Somente administrador.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso"
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "Token ausente ou inválido"
+          },
+          "403": {
+            "description": "Acesso negado ou conta bloqueada"
+          },
+          "500": {
+            "description": "Falha interna"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Demandantes"
+        ],
+        "summary": "Criar perfil",
+        "description": "Somente demandante autenticado; cria o próprio perfil.",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Criado"
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "Token ausente ou inválido"
+          },
+          "403": {
+            "description": "Acesso negado ou conta bloqueada"
+          },
+          "500": {
+            "description": "Falha interna"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              },
+              "example": {
+                "name": "Nome",
+                "photo_url": null,
+                "phone": "51999999999",
+                "type": "pessoaFisica",
+                "cpf_cnpj": "12345678900",
+                "address": "Endereço"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/applicants/{id}": {
+      "get": {
+        "tags": [
+          "Demandantes"
+        ],
+        "summary": "Consultar perfil",
+        "description": "Próprio usuário ou administrador.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID numérico positivo.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso"
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "Token ausente ou inválido"
+          },
+          "403": {
+            "description": "Acesso negado ou conta bloqueada"
+          },
+          "404": {
+            "description": "Recurso não encontrado ou inacessível"
+          },
+          "500": {
+            "description": "Falha interna"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Demandantes"
+        ],
+        "summary": "Atualizar perfil",
+        "description": "Somente demandante proprietário; enviar todos os campos.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID numérico positivo.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Sucesso sem corpo"
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "Token ausente ou inválido"
+          },
+          "403": {
+            "description": "Acesso negado ou conta bloqueada"
+          },
+          "404": {
+            "description": "Recurso não encontrado ou inacessível"
+          },
+          "500": {
+            "description": "Falha interna"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              },
+              "example": {
+                "name": "Nome",
+                "photo_url": null,
+                "phone": "51999999999",
+                "type": "pessoaFisica",
+                "cpf_cnpj": "12345678900",
+                "address": "Endereço"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/teachers/": {
+      "get": {
+        "tags": [
+          "Professores"
+        ],
+        "summary": "Listar perfis",
+        "description": "Somente administrador.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso"
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "Token ausente ou inválido"
+          },
+          "403": {
+            "description": "Acesso negado ou conta bloqueada"
+          },
+          "500": {
+            "description": "Falha interna"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Professores"
+        ],
+        "summary": "Criar perfil",
+        "description": "Somente professor autenticado; cria o próprio perfil.",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Criado"
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "Token ausente ou inválido"
+          },
+          "403": {
+            "description": "Acesso negado ou conta bloqueada"
+          },
+          "500": {
+            "description": "Falha interna"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              },
+              "example": {
+                "name": "Nome",
+                "photo_url": null,
+                "siape": "0123456",
+                "areas": [
+                  {
+                    "areas_id": 1,
+                    "type": "técnica"
+                  },
+                  {
+                    "areas_id": 2,
+                    "type": "interesse"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/teachers/{id}": {
+      "get": {
+        "tags": [
+          "Professores"
+        ],
+        "summary": "Consultar perfil",
+        "description": "Próprio usuário ou administrador.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID numérico positivo.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso"
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "Token ausente ou inválido"
+          },
+          "403": {
+            "description": "Acesso negado ou conta bloqueada"
+          },
+          "404": {
+            "description": "Recurso não encontrado ou inacessível"
+          },
+          "500": {
+            "description": "Falha interna"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Professores"
+        ],
+        "summary": "Atualizar perfil",
+        "description": "Somente professor proprietário; enviar todos os campos.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID numérico positivo.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Sucesso sem corpo"
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "Token ausente ou inválido"
+          },
+          "403": {
+            "description": "Acesso negado ou conta bloqueada"
+          },
+          "404": {
+            "description": "Recurso não encontrado ou inacessível"
+          },
+          "500": {
+            "description": "Falha interna"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              },
+              "example": {
+                "name": "Nome",
+                "photo_url": null,
+                "siape": "0123456",
+                "areas": [
+                  {
+                    "areas_id": 1,
+                    "type": "técnica"
+                  },
+                  {
+                    "areas_id": 2,
+                    "type": "interesse"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/teachers/{id}/areas": {
+      "put": {
+        "tags": [
+          "Professores"
+        ],
+        "summary": "Substituir áreas do professor",
+        "description": "Somente o professor proprietário; a lista substitui todos os vínculos.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID numérico positivo.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Sucesso sem corpo"
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "Token ausente ou inválido"
+          },
+          "403": {
+            "description": "Acesso negado ou conta bloqueada"
+          },
+          "404": {
+            "description": "Recurso não encontrado ou inacessível"
+          },
+          "500": {
+            "description": "Falha interna"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              },
+              "example": {
+                "areas": [
+                  {
+                    "areas_id": 1,
+                    "type": "técnica"
+                  },
+                  {
+                    "areas_id": 2,
+                    "type": "interesse"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/teachers/{id}/recommendations": {
+      "get": {
+        "tags": [
+          "Professores"
+        ],
+        "summary": "Consultar recomendações",
+        "description": "Somente o professor proprietário; limite padrão 10, de 1 a 100.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID numérico positivo.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Número de recomendações (1 a 100).",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso"
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "Token ausente ou inválido"
+          },
+          "403": {
+            "description": "Acesso negado ou conta bloqueada"
+          },
+          "404": {
+            "description": "Recurso não encontrado ou inacessível"
+          },
+          "500": {
+            "description": "Falha interna"
+          }
+        }
+      }
+    },
+    "/areas-teachers/professor/{id}": {
+      "get": {
+        "tags": [
+          "Áreas"
+        ],
+        "summary": "Consultar áreas do professor",
+        "description": "Próprio usuário ou administrador.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID numérico positivo.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso"
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "Token ausente ou inválido"
+          },
+          "403": {
+            "description": "Acesso negado ou conta bloqueada"
+          },
+          "404": {
+            "description": "Recurso não encontrado ou inacessível"
+          },
+          "500": {
+            "description": "Falha interna"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Áreas"
+        ],
+        "summary": "Substituir áreas do professor",
+        "description": "Somente o professor proprietário; alias de /teachers/{id}/areas.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID numérico positivo.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Sucesso sem corpo"
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "Token ausente ou inválido"
+          },
+          "403": {
+            "description": "Acesso negado ou conta bloqueada"
+          },
+          "404": {
+            "description": "Recurso não encontrado ou inacessível"
+          },
+          "500": {
+            "description": "Falha interna"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              },
+              "example": {
+                "areas": [
+                  {
+                    "areas_id": 1,
+                    "type": "técnica"
+                  },
+                  {
+                    "areas_id": 2,
+                    "type": "interesse"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/areas/": {
+      "get": {
+        "tags": [
+          "Áreas"
+        ],
+        "summary": "Listar áreas",
+        "description": "Requer JWT válido e conta não bloqueada.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso"
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "Token ausente ou inválido"
+          },
+          "403": {
+            "description": "Acesso negado ou conta bloqueada"
+          },
+          "500": {
+            "description": "Falha interna"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Áreas"
+        ],
+        "summary": "Criar área",
+        "description": "Requer JWT válido e conta não bloqueada.",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Criado"
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "Token ausente ou inválido"
+          },
+          "403": {
+            "description": "Acesso negado ou conta bloqueada"
+          },
+          "500": {
+            "description": "Falha interna"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              },
+              "example": {
+                "name": "Desenvolvimento de Software"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/areas/{id}": {
+      "get": {
+        "tags": [
+          "Áreas"
+        ],
+        "summary": "Consultar área",
+        "description": "Requer JWT válido e conta não bloqueada.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID numérico positivo.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso"
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "Token ausente ou inválido"
+          },
+          "403": {
+            "description": "Acesso negado ou conta bloqueada"
+          },
+          "404": {
+            "description": "Recurso não encontrado ou inacessível"
+          },
+          "500": {
+            "description": "Falha interna"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Áreas"
+        ],
+        "summary": "Atualizar área",
+        "description": "Requer JWT válido e conta não bloqueada.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID numérico positivo.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Sucesso sem corpo"
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "Token ausente ou inválido"
+          },
+          "403": {
+            "description": "Acesso negado ou conta bloqueada"
+          },
+          "404": {
+            "description": "Recurso não encontrado ou inacessível"
+          },
+          "500": {
+            "description": "Falha interna"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              },
+              "example": {
+                "name": "Desenvolvimento de Software"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Áreas"
+        ],
+        "summary": "Excluir área",
+        "description": "Requer JWT válido e conta não bloqueada.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID numérico positivo.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Sucesso sem corpo"
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "Token ausente ou inválido"
+          },
+          "403": {
+            "description": "Acesso negado ou conta bloqueada"
+          },
+          "404": {
+            "description": "Recurso não encontrado ou inacessível"
+          },
+          "500": {
+            "description": "Falha interna"
+          }
+        }
+      }
+    },
+    "/demands/": {
+      "get": {
+        "tags": [
+          "Demandas"
+        ],
+        "summary": "Listar demandas",
+        "description": "Demandante: próprias; professor: prateleira; administrador: todas.",
+        "parameters": [
+          {
+            "name": "escopo",
+            "in": "query",
+            "description": "minhas ou prateleira; o acesso depende do papel.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso"
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "Token ausente ou inválido"
+          },
+          "403": {
+            "description": "Acesso negado ou conta bloqueada"
+          },
+          "409": {
+            "description": "Conflito de estado ou registro"
+          },
+          "500": {
+            "description": "Falha interna"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Demandas"
+        ],
+        "summary": "Criar demanda",
+        "description": "Somente demandante com perfil.",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Criado"
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "Token ausente ou inválido"
+          },
+          "403": {
+            "description": "Acesso negado ou conta bloqueada"
+          },
+          "409": {
+            "description": "Conflito de estado ou registro"
+          },
+          "500": {
+            "description": "Falha interna"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              },
+              "example": {
+                "titulo": "Site institucional",
+                "descricao": "Criar um site",
+                "publicoAlvo": "Comunidade",
+                "impacto": "Melhorar comunicação",
+                "areaId": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "/demands/{id}": {
+      "get": {
+        "tags": [
+          "Demandas"
+        ],
+        "summary": "Consultar demanda",
+        "description": "Conforme propriedade, atribuição ou acesso à prateleira.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID numérico positivo.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso"
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "Token ausente ou inválido"
+          },
+          "403": {
+            "description": "Acesso negado ou conta bloqueada"
+          },
+          "404": {
+            "description": "Recurso não encontrado ou inacessível"
+          },
+          "500": {
+            "description": "Falha interna"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Demandas"
+        ],
+        "summary": "Editar demanda",
+        "description": "Proprietário; somente enquanto cadastrada.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID numérico positivo.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso"
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "Token ausente ou inválido"
+          },
+          "403": {
+            "description": "Acesso negado ou conta bloqueada"
+          },
+          "404": {
+            "description": "Recurso não encontrado ou inacessível"
+          },
+          "500": {
+            "description": "Falha interna"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              },
+              "example": {
+                "titulo": "Site institucional",
+                "descricao": "Criar um site",
+                "publicoAlvo": "Comunidade",
+                "impacto": "Melhorar comunicação",
+                "areaId": 1
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Demandas"
+        ],
+        "summary": "Cancelar demanda",
+        "description": "Proprietário; mesmo comportamento da ação cancelar.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID numérico positivo.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso"
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "Token ausente ou inválido"
+          },
+          "403": {
+            "description": "Acesso negado ou conta bloqueada"
+          },
+          "404": {
+            "description": "Recurso não encontrado ou inacessível"
+          },
+          "500": {
+            "description": "Falha interna"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              },
+              "example": {
+                "motivoCancelamento": "Não preciso mais"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/demands/{id}/analisar": {
+      "post": {
+        "tags": [
+          "Demandas"
+        ],
+        "summary": "Analisar demanda",
+        "description": "Professor reserva demanda cadastrada.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID numérico positivo.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso"
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "Token ausente ou inválido"
+          },
+          "403": {
+            "description": "Acesso negado ou conta bloqueada"
+          },
+          "404": {
+            "description": "Recurso não encontrado ou inacessível"
+          },
+          "409": {
+            "description": "Conflito de estado ou registro"
+          },
+          "500": {
+            "description": "Falha interna"
+          }
+        }
+      }
+    },
+    "/demands/{id}/devolver": {
+      "post": {
+        "tags": [
+          "Demandas"
+        ],
+        "summary": "Devolver demanda",
+        "description": "Professor atribuído devolve demanda em análise.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID numérico positivo.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso"
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "Token ausente ou inválido"
+          },
+          "403": {
+            "description": "Acesso negado ou conta bloqueada"
+          },
+          "404": {
+            "description": "Recurso não encontrado ou inacessível"
+          },
+          "500": {
+            "description": "Falha interna"
+          }
+        }
+      }
+    },
+    "/demands/{id}/assumir": {
+      "post": {
+        "tags": [
+          "Demandas"
+        ],
+        "summary": "Assumir demanda",
+        "description": "Professor atribuído inicia produção.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID numérico positivo.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso"
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "Token ausente ou inválido"
+          },
+          "403": {
+            "description": "Acesso negado ou conta bloqueada"
+          },
+          "404": {
+            "description": "Recurso não encontrado ou inacessível"
+          },
+          "500": {
+            "description": "Falha interna"
+          }
+        }
+      }
+    },
+    "/demands/{id}/concluir": {
+      "post": {
+        "tags": [
+          "Demandas"
+        ],
+        "summary": "Concluir demanda",
+        "description": "Professor atribuído conclui demanda em produção.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID numérico positivo.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso"
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "Token ausente ou inválido"
+          },
+          "403": {
+            "description": "Acesso negado ou conta bloqueada"
+          },
+          "404": {
+            "description": "Recurso não encontrado ou inacessível"
+          },
+          "409": {
+            "description": "Conflito de estado ou registro"
+          },
+          "500": {
+            "description": "Falha interna"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              },
+              "example": {
+                "descricaoSolucao": "Solução entregue."
+              }
+            }
+          }
+        }
+      }
+    },
+    "/demands/{id}/cancelar": {
+      "post": {
+        "tags": [
+          "Demandas"
+        ],
+        "summary": "Cancelar demanda",
+        "description": "Demandante proprietário cancela demanda cadastrada.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID numérico positivo.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso"
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "Token ausente ou inválido"
+          },
+          "403": {
+            "description": "Acesso negado ou conta bloqueada"
+          },
+          "404": {
+            "description": "Recurso não encontrado ou inacessível"
+          },
+          "500": {
+            "description": "Falha interna"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              },
+              "example": {
+                "motivoCancelamento": "Não preciso mais"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/": {
+      "get": {
+        "tags": [
+          "Usuários"
+        ],
+        "summary": "Listar usuários",
+        "description": "Somente administrador.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso"
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "Token ausente ou inválido"
+          },
+          "403": {
+            "description": "Acesso negado ou conta bloqueada"
+          },
+          "500": {
+            "description": "Falha interna"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Usuários"
+        ],
+        "summary": "Criar usuário",
+        "description": "Somente administrador. O papel pode ser definido pelo domínio do e-mail.",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Criado"
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "Token ausente ou inválido"
+          },
+          "403": {
+            "description": "Acesso negado ou conta bloqueada"
+          },
+          "500": {
+            "description": "Falha interna"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              },
+              "example": {
+                "name": "Nome",
+                "email": "usuario@example.com",
+                "role": "demandante",
+                "foto_url": null
+              }
+            }
+          }
+        }
+      }
+    },
+    "/notifications": {
+      "get": {
+        "tags": [
+          "Notificações"
+        ],
+        "summary": "Listar notificações",
+        "description": "Somente notificações da sessão; ID decrescente.",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Número de registros: 1 a 100; padrão 30.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "description": "ID da última entrada da página anterior.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso"
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "Token ausente ou inválido"
+          },
+          "403": {
+            "description": "Acesso negado ou conta bloqueada"
+          },
+          "500": {
+            "description": "Falha interna"
+          }
+        }
+      }
+    },
+    "/notifications/unread-count": {
+      "get": {
+        "tags": [
+          "Notificações"
+        ],
+        "summary": "Contar não lidas",
+        "description": "Requer JWT válido e conta não bloqueada.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso"
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "Token ausente ou inválido"
+          },
+          "403": {
+            "description": "Acesso negado ou conta bloqueada"
+          },
+          "500": {
+            "description": "Falha interna"
+          }
+        }
+      }
+    },
+    "/notifications/{id}/read": {
+      "patch": {
+        "tags": [
+          "Notificações"
+        ],
+        "summary": "Marcar como lida",
+        "description": "Somente notificação própria.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID numérico positivo.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Sucesso sem corpo"
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "Token ausente ou inválido"
+          },
+          "403": {
+            "description": "Acesso negado ou conta bloqueada"
+          },
+          "404": {
+            "description": "Recurso não encontrado ou inacessível"
+          },
+          "500": {
+            "description": "Falha interna"
+          }
+        }
+      }
+    },
+    "/notifications/read-all": {
+      "patch": {
+        "tags": [
+          "Notificações"
+        ],
+        "summary": "Marcar todas como lidas",
+        "description": "Requer JWT válido e conta não bloqueada.",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "Sucesso sem corpo"
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "Token ausente ou inválido"
+          },
+          "403": {
+            "description": "Acesso negado ou conta bloqueada"
+          },
+          "500": {
+            "description": "Falha interna"
+          }
+        }
+      }
+    },
+    "/notifications/devices": {
+      "put": {
+        "tags": [
+          "Notificações"
+        ],
+        "summary": "Registrar token FCM",
+        "description": "Vincula o token à conta autenticada.",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "Sucesso sem corpo"
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "Token ausente ou inválido"
+          },
+          "403": {
+            "description": "Acesso negado ou conta bloqueada"
+          },
+          "500": {
+            "description": "Falha interna"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              },
+              "example": {
+                "token": "TOKEN_FCM"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Notificações"
+        ],
+        "summary": "Remover token FCM",
+        "description": "Remove apenas o token vinculado à sessão.",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "Sucesso sem corpo"
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "Token ausente ou inválido"
+          },
+          "403": {
+            "description": "Acesso negado ou conta bloqueada"
+          },
+          "500": {
+            "description": "Falha interna"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              },
+              "example": {
+                "token": "TOKEN_FCM"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/reports": {
+      "get": {
+        "tags": [
+          "Denúncias"
+        ],
+        "summary": "Listar denúncias",
+        "description": "Somente administrador; ordenação por ID decrescente.",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Número de registros: 1 a 100; padrão 30.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "description": "ID da última entrada da página anterior.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "pendente, procedente ou improcedente.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso"
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "Token ausente ou inválido"
+          },
+          "403": {
+            "description": "Acesso negado ou conta bloqueada"
+          },
+          "409": {
+            "description": "Conflito de estado ou registro"
+          },
+          "500": {
+            "description": "Falha interna"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Denúncias"
+        ],
+        "summary": "Registrar denúncia",
+        "description": "Professor ativo com acesso à demanda; uma denúncia por demanda e professor.",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Criado"
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "Token ausente ou inválido"
+          },
+          "403": {
+            "description": "Acesso negado ou conta bloqueada"
+          },
+          "409": {
+            "description": "Conflito de estado ou registro"
+          },
+          "500": {
+            "description": "Falha interna"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              },
+              "example": {
+                "demandaId": 1,
+                "motivo": "spam",
+                "descricao": "Descrição da infração."
+              }
+            }
+          }
+        }
+      }
+    },
+    "/reports/{id}": {
+      "get": {
+        "tags": [
+          "Denúncias"
+        ],
+        "summary": "Consultar denúncia",
+        "description": "Administrador ou professor autor.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID numérico positivo.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso"
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "Token ausente ou inválido"
+          },
+          "403": {
+            "description": "Acesso negado ou conta bloqueada"
+          },
+          "404": {
+            "description": "Recurso não encontrado ou inacessível"
+          },
+          "500": {
+            "description": "Falha interna"
+          }
+        }
+      }
+    },
+    "/reports/{id}/judgment": {
+      "patch": {
+        "tags": [
+          "Denúncias"
+        ],
+        "summary": "Julgar denúncia",
+        "description": "Somente administrador. Procedente cancela a demanda e aplica no máximo um strike por demanda; a decisão é final.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID numérico positivo.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso"
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "Token ausente ou inválido"
+          },
+          "403": {
+            "description": "Acesso negado ou conta bloqueada"
+          },
+          "404": {
+            "description": "Recurso não encontrado ou inacessível"
+          },
+          "409": {
+            "description": "Conflito de estado ou registro"
+          },
+          "500": {
+            "description": "Falha interna"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              },
+              "example": {
+                "decisao": "procedente",
+                "justificativa": "Infração confirmada."
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

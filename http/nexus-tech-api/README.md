@@ -9,5 +9,5 @@ do professor autenticado. O corpo substitui a lista inteira; os IDs das áreas
 devem existir. O cadastro de professor também exige uma área técnica e uma de
 interesse, com IDs distintos.
 
-Os contratos atuais estão em [autenticacao.md](../../docs/autenticacao.md),
-[perfis.md](../../docs/perfis.md) e [demandas.md](../../docs/demandas.md).
+Os contratos atuais estão em [Rotas](../../docs/rotas.md) e na interface
+interativa em `/docs` quando a API estiver em execução.

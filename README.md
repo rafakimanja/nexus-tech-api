@@ -1,100 +1,56 @@
 # Nexus Tech API
 
-API em Go para autenticação, perfis, áreas e demandas do Nexus Tech.
+A Nexus Tech API conecta pessoas e organizações que precisam de soluções a
+professores que podem analisar e desenvolver essas demandas. Ela fornece ao
+aplicativo uma interface HTTP para autenticação, perfis, publicação e acompanhamento
+de demandas, recomendações, notificações e moderação de denúncias.
 
-**[Documentação completa da API](docs/README.md)**: configuração, arquitetura,
-fluxos, referência de rotas, contratos e testes.
+O fluxo começa com a autenticação Google. A API valida a identidade e entrega um
+JWT; o aplicativo usa esse token nas chamadas seguintes. Demandantes publicam
+necessidades, professores consultam e assumem demandas, e administradores
+acompanham denúncias. As informações ficam no PostgreSQL. Vetores produzidos pelo
+Ollama ajudam a recomendar demandas às áreas dos professores. Notificações são
+armazenadas na API e podem ser enviadas via Firebase Cloud Messaging (FCM).
 
-## Getting Started
+## Documentação
 
-O contrato de login, sessão de 12 horas e consulta `GET /me` está em
-[docs/autenticacao.md](docs/autenticacao.md).
+- [Arquitetura](docs/arquitetura.md): componentes, dados e principais fluxos.
+- [Rotas](docs/rotas.md): autenticação, permissões e contratos principais.
+- **Interface interativa:** acesse `http://localhost:3333/docs` com a API em
+  execução. A especificação OpenAPI também está disponível em `/openapi.json`.
+  A interface permite executar requisições reais; prefira uma base de testes.
 
-Cadastro, edição e permissões de perfis estão em [docs/perfis.md](docs/perfis.md).
+## Executar localmente
 
-Contratos e ciclo de vida de demandas estão em [docs/demandas.md](docs/demandas.md).
+1. Instale Go 1.26.1, PostgreSQL com a extensão `pgvector` e, para embeddings,
+   Ollama com o modelo `mxbai-embed-large`.
+2. Copie `.env.example` para `.env` e preencha as configurações. O exemplo não
+   contém credenciais reais. `JWT_SECRET_KEY` e `SESSION_SECRET` devem ter pelo
+   menos 32 caracteres. Configure um projeto OAuth Google válido.
+3. Configure `DATABASE_URL` e deixe `LOCAL_DB=false` ou vazio. A API executa
+   migrações ao iniciar; use primeiro um banco de desenvolvimento.
+4. Defina `PORT=3333`, `OLLAMA_URL`, `GOOGLE_CLIENT_ID` e
+   `GOOGLE_CLIENT_SECRET`. O login OAuth manual usa o callback fixo
+   `http://localhost:3333/auth/google/callback`; cadastre-o no Google.
+5. Ajuste `CORS_ALLOWED_ORIGINS` para a origem do aplicativo web, por exemplo
+   `http://localhost:6170`. Para várias origens, separe por vírgulas. Sem a
+   variável, a API mantém o padrão anterior `http://localhost:5173`.
+6. Execute `go run ./cmd/api` e abra `/health` e `/docs`.
 
-## MakeFile
+Alternativamente, `LOCAL_DB=true` usa `BLUEPRINT_DB_USERNAME`,
+`BLUEPRINT_DB_PASSWORD`, `BLUEPRINT_DB_HOST`, `BLUEPRINT_DB_PORT`,
+`BLUEPRINT_DB_DATABASE` e, opcionalmente, `BLUEPRINT_DB_SCHEMA`.
+`go run ./cmd/seed` altera o esquema e cria dados de demonstração; use somente
+em banco apropriado. `go run ./cmd/embeddings` reprocessa vetores pendentes.
 
-Run build make command with tests
-```bash
-make all
-```
+FCM é opcional: configure `FCM_PROJECT_ID` e credenciais Google válidas por
+`GOOGLE_APPLICATION_CREDENTIALS` para ativar o worker de push. A central HTTP
+de notificações funciona sem FCM. Mantenha o JSON da conta de serviço fora do
+Git e da imagem; em contêiner, monte-o como segredo.
 
-Build the application
-```bash
-make build
-```
+## Testes
 
-Run the application
-```bash
-make run
-```
-
-Populate the database independently from the API (requires the same database
-environment variables as the API, loaded from `.env` or the shell):
-```bash
-make seed
-```
-This creates/updates the schema and inserts sample areas, applicants, teachers
-and demands. It is safe to run more than once. To run directly:
-```bash
-go run ./cmd/seed
-```
-
-### Recomendações para professores
-
-Configure `OLLAMA_URL` com o endereço do Ollama e disponibilize o modelo
-`mxbai-embed-large` (vetores de 1024 dimensões). O PostgreSQL precisa ter a
-extensão pgvector instalada e habilitada antes das migrações.
-
-Ao criar ou alterar uma demanda ou área, a API tenta gerar seu embedding.
-Se o Ollama falhar, o cadastro é mantido e o embedding fica pendente. Para
-processar embeddings pendentes de áreas e demandas novamente, execute:
-
-```bash
-go run ./cmd/embeddings
-```
-
-O próprio professor autenticado pode consultar
-`GET /teachers/:id/recommendations?limit=10` (limite de 1 a 100). São
-consideradas demandas com status `cadastrada`, não canceladas, sem professor atribuído
-e com embedding disponível. Áreas técnicas recebem peso 0,8 e áreas de
-interesse, 0,5; a melhor correspondência determina a ordem. Similaridades
-negativas são tratadas como zero. Professor sem áreas utilizáveis recebe uma
-lista vazia. O processamento pendente precisa ser executado novamente quando
-houver falhas; não há fila automática neste MVP.
-
-Para executar o teste de integração da recomendação, configure
-`TEST_DATABASE_URL` para um PostgreSQL de teste com pgvector habilitado e rode
-`go test ./internal/domain/recommendation`.
-Create DB container
-```bash
-make docker-run
-```
-
-Shutdown DB Container
-```bash
-make docker-down
-```
-
-Testes de integração requerem `TEST_DATABASE_URL` apontando para um PostgreSQL
-exclusivo de testes, com pgvector habilitado. Sem essa variável, são ignorados:
-```bash
-make itest
-```
-
-Live reload the application:
-```bash
-make watch
-```
-
-Run the test suite:
-```bash
-make test
-```
-
-Clean up binary from the last build:
-```bash
-make clean
-```
+Execute `go test ./...`. Testes PostgreSQL são pulados sem `TEST_DATABASE_URL`;
+para executá-los, configure essa variável para um banco de testes onde a conta
+possa criar e remover schemas. A aplicação usa `AutoMigrate` e não possui
+rollback automático de migrações.

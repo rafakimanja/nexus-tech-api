@@ -17,24 +17,6 @@ seed:
 # Generate embeddings for demands without vectors
 embeddings:
 	@go run ./cmd/embeddings
-# Create DB container
-docker-run:
-	@if docker compose up --build 2>/dev/null; then \
-		: ; \
-	else \
-		echo "Falling back to Docker Compose V1"; \
-		docker-compose up --build; \
-	fi
-
-# Shutdown DB container
-docker-down:
-	@if docker compose down 2>/dev/null; then \
-		: ; \
-	else \
-		echo "Falling back to Docker Compose V1"; \
-		docker-compose down; \
-	fi
-
 # Test the application
 test:
 	@echo "Testing..."
@@ -66,4 +48,4 @@ watch:
             fi; \
         fi
 
-.PHONY: all build run seed embeddings test clean watch docker-run docker-down itest
+.PHONY: all build run seed embeddings test clean watch itest
