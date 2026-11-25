@@ -1,6 +1,8 @@
 package recommendation
 
 import (
+	"database/sql"
+	_ "embed"
 	"errors"
 	"net/http"
 	"strconv"
@@ -8,6 +10,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
+
+//go:embed suggest_demands.sql
+var suggestDemandsSQL string
 
 type Area struct {
 	ID   uint   `json:"id"`
@@ -69,21 +74,11 @@ func (h *Handler) Get(c *gin.Context) {
 	recommendations := make([]Recommendation, 0)
 	if professor.IsActive {
 		var rows []row
-		err = h.db.WithContext(c.Request.Context()).Raw(`
-			SELECT * FROM (
-				SELECT DISTINCT ON (d.id) d.id AS demand_id, d.title,
-					GREATEST(0, 1 - (d.embedding <=> a.embedding)) *
-					CASE pa.type WHEN 'técnica' THEN 0.8 WHEN 'interesse' THEN 0.5 END AS score,
-					a.id AS area_id, a.name AS area_name, pa.type AS area_type
-				FROM demandas d
-				JOIN professor_areas pa ON pa.professor_id = ? AND pa.deleted_at IS NULL
-				JOIN areas a ON a.id = pa.areas_id
-				WHERE d.deleted_at IS NULL AND d.professor_id IS NULL
-					AND d.is_cancelled = false AND lower(trim(d.status)) = 'cadastrada'
-					AND d.embedding IS NOT NULL AND a.embedding IS NOT NULL
-					AND pa.type IN ('técnica', 'interesse')
-				ORDER BY d.id, score DESC, a.id ASC
-			) ranked ORDER BY score DESC, demand_id ASC LIMIT ?`, id, limit).Scan(&rows).Error
+		err = h.db.WithContext(c.Request.Context()).Raw(
+			suggestDemandsSQL,
+			sql.Named("professor_id", id),
+			sql.Named("limit", limit),
+		).Scan(&rows).Error
 		if err != nil {
 			respondError(c, http.StatusInternalServerError, "could not retrieve recommendations")
 			return
